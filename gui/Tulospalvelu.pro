@@ -47,7 +47,8 @@ SOURCES += main.cpp\
     model/rastimodel.cpp \
     dialog/sarjavalintadialog.cpp \
     dialog/yhteislahtodialog.cpp \
-    delegate/tulospalveludelegate.cpp
+    delegate/tulospalveludelegate.cpp \
+    dialog/uusitapahtumadialog.cpp
 
 HEADERS  += mainwindow.h \
     widget/testemitreaderwidget.h \
@@ -78,7 +79,8 @@ HEADERS  += mainwindow.h \
     model/rastimodel.h \
     dialog/sarjavalintadialog.h \
     dialog/yhteislahtodialog.h \
-    delegate/tulospalveludelegate.h
+    delegate/tulospalveludelegate.h \
+    dialog/uusitapahtumadialog.h
 
 FORMS    += mainwindow.ui \
     widget/testemitreaderwidget.ui \
@@ -94,7 +96,8 @@ FORMS    += mainwindow.ui \
     form/tulosnayttoform.ui \
     dialog/asetuksetdialog.ui \
     dialog/sarjavalintadialog.ui \
-    dialog/yhteislahtodialog.ui
+    dialog/yhteislahtodialog.ui \
+    dialog/uusitapahtumadialog.ui
 
 
 

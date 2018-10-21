@@ -12,6 +12,12 @@ SarjatForm::SarjatForm(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    const bool rogaining = Tapahtuma::tapahtuma()->tyyppi() == RACE_ROGAINING;
+
+    ui->sakkoLabel->setText(rogaining
+                            ? _("Sakko annetaan pisteinä joka aikarajan yli menevän ajan alkavasta minuutista")
+                            : _("Sakkoaika puuttuvasta rastista annetaan sekunteina."));
+
     ui->sarjaView->setItemDelegate(m_delegate);
     ui->sarjaView->setModel(qobject_cast<RataModel*>(m_sarjaModel));
     ui->sarjaView->hideColumn(0);
@@ -22,6 +28,11 @@ SarjatForm::SarjatForm(QWidget *parent) :
 
     ui->rastiView->setHeader(m_headerView);
     ui->rastiView->hideColumn(0);
+
+    if (!rogaining) {
+        ui->sarjaView->hideColumn(4); // Suunnistuksessa ei ole aikarajaa
+        ui->rastiView->hideColumn(3); // Pisteet
+    }
 }
 
 SarjatForm::~SarjatForm()

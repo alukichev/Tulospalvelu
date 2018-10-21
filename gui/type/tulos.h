@@ -12,7 +12,9 @@
 class Tulos
 {
 public:
-    explicit Tulos(int id, const QString& sarja, int sija, const QString &_emit, const QString& kilpailija, int tila, const QTime& aika, const QDateTime& maaliaika, const QList<Valiaika>& valiajat);
+    explicit Tulos(int id, const QString& sarja, int sija, const QString &_emit,
+                   const QString& kilpailija, int tila, const QTime& aika, const QDateTime& maaliaika,
+                   const QList<Valiaika>& valiajat, int pisteet = 0);
 
     static QList<Tulos> haeTulokset(const Sarja* sarja);
 
@@ -31,6 +33,7 @@ public:
     int m_tila;             // FIXME miksi ei käytetä Tila m_tila?
     QTime m_aika;           // Tulosaika
     QDateTime m_maaliaika;  // Maaliin saapumisaika
+    int m_pisteet;          // Kerättyjen rastien yhteispistemäärä (RACE_ROGAINING)
 
     QList<Valiaika> m_valiajat; // Väliajat
 };

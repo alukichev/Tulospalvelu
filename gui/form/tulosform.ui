@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>642</width>
+    <width>730</width>
     <height>505</height>
    </rect>
   </property>
@@ -17,7 +17,16 @@
    <property name="spacing">
     <number>0</number>
    </property>
-   <property name="margin">
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
     <number>0</number>
    </property>
    <item>
@@ -85,7 +94,7 @@
             </layout>
            </item>
            <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="1,0">
+            <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="1,0,0">
              <item>
               <layout class="QVBoxLayout" name="verticalLayout_4">
                <item>
@@ -114,14 +123,29 @@
                  <property name="alignment">
                   <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                  </property>
-                 <property name="readOnly">
-                  <bool>false</bool>
-                 </property>
                  <property name="buttonSymbols">
                   <enum>QAbstractSpinBox::NoButtons</enum>
                  </property>
                  <property name="displayFormat">
                   <string>HH.mm.ss</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <layout class="QVBoxLayout" name="pisteLayout">
+               <item>
+                <widget class="QLabel" name="pisteetLabel">
+                 <property name="text">
+                  <string>Pisteet:</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLineEdit" name="pisteetEdit">
+                 <property name="readOnly">
+                  <bool>true</bool>
                  </property>
                 </widget>
                </item>

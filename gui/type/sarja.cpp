@@ -1,11 +1,14 @@
 #include "sarja.h"
 
-Sarja::Sarja(QObject *parent, const QVariant &id, const QString &nimi, int sakkoaika, const QVariant& yhteislahto, const QList<Rasti> rastit, bool data) :
+Sarja::Sarja(QObject *parent, const QVariant &id, const QString &nimi, int sakko,
+             const QVariant& yhteislahto, const QTime &aikaraja, const QList<Rasti> rastit,
+             bool data) :
     QObject(parent),
     m_id(id),
     m_nimi(nimi),
-    m_sakkoaika(sakkoaika),
+    m_sakko(sakko),
     m_yhteislahto(yhteislahto),
+    m_aikaraja(aikaraja),
     m_rastit(rastit),
     m_data(data)
 {
@@ -26,7 +29,8 @@ QList<Sarja*> Sarja::haeSarjat(QObject *parent, const Tapahtuma *tapahtuma)
     while (query.next()) {
         QSqlRecord r = query.record();
 
-        sarjat.append(new Sarja(parent, r.value("id"), r.value("nimi").toString(), r.value("sakkoaika").toInt(), r.value("yhteislahto"), Rasti::haeRastit(r.value("id"))));
+        sarjat.append(new Sarja(parent, r.value("id"), r.value("nimi").toString(), r.value("sakko").toInt(),
+                                r.value("yhteislahto"), r.value("aikaraja").toTime(), Rasti::haeRastit(r.value("id"))));
     }
 
     return sarjat;
@@ -47,7 +51,8 @@ QList<Sarja*> Sarja::haeSarjatData(QObject *parent, const Tapahtuma *tapahtuma)
     while (query.next()) {
         QSqlRecord r = query.record();
 
-        sarjat.append(new Sarja(parent, r.value("id"), r.value("nimi").toString(), r.value("sakkoaika").toInt(), r.value("yhteislahto"), Rasti::haeRastitData(r.value("id")), true));
+        sarjat.append(new Sarja(parent, r.value("id"), r.value("nimi").toString(), r.value("sakko").toInt(),
+                                r.value("yhteislahto"), r.value("aikaraja").toTime(), Rasti::haeRastitData(r.value("id")), true));
     }
 
     return sarjat;
@@ -67,7 +72,8 @@ Sarja * Sarja::haeSarja(QObject *parent, const QVariant &id)
     if (query.next()) {
         QSqlRecord r = query.record();
 
-        return new Sarja(parent, id, r.value("nimi").toString(), r.value("sakkoaika").toInt(), r.value("yhteislahto"), Rasti::haeRastit(id));
+        return new Sarja(parent, id, r.value("nimi").toString(), r.value("sakko").toInt(),
+                         r.value("yhteislahto"), r.value("aikaraja").toTime(), Rasti::haeRastit(id));
     }
 
     return 0;
@@ -107,14 +113,24 @@ QVariant Sarja::getYhteislahto() const
     return m_yhteislahto;
 }
 
-bool Sarja::isSakkoaika() const
+bool Sarja::isAikaraja() const
 {
-    return m_sakkoaika != -1;
+    return m_aikaraja.isValid();
 }
 
-int Sarja::getSakkoaika() const
+QTime Sarja::getAikaraja() const
 {
-    return isSakkoaika() ? m_sakkoaika : 0;
+    return m_aikaraja;
+}
+
+bool Sarja::isSakko() const
+{
+    return m_sakko != -1;
+}
+
+int Sarja::getSakko() const
+{
+    return isSakko() ? m_sakko : 0;
 }
 
 void Sarja::setNimi(const QVariant &nimi)
@@ -126,13 +142,15 @@ void Sarja::setNimi(const QVariant &nimi)
     m_nimi = nimi.toString();
 }
 
-void Sarja::setSakkoaika(const QVariant &sakkoaika)
+void Sarja::setSakko(const QVariant &sakko)
 {
     if (!m_data) {
         return;
     }
 
-    m_sakkoaika = sakkoaika.toInt();
+    m_sakko = sakko.toInt();
+    if (!m_sakko)
+        m_sakko = -1;
 }
 
 void Sarja::setYhteislahto(const QVariant &yhteislahto)
@@ -154,6 +172,23 @@ void Sarja::setYhteislahto(const QVariant &yhteislahto)
     }
 }
 
+void Sarja::setAikaraja(const QVariant& aikaraja)
+{
+    if (!m_data) {
+        return;
+    }
+
+    const QString s = aikaraja.toString().replace(':', '.');
+
+    m_aikaraja = QTime::fromString(s, "h.m.s");
+    if (!m_aikaraja.isValid())
+        m_aikaraja = QTime::fromString(s, "h.m");
+    if (!m_aikaraja.isValid())
+        m_aikaraja = QTime::fromString(s, "m");
+
+    qInfo() << "setAikaraja(" << s << ") -> " << m_aikaraja;
+}
+
 bool Sarja::dbUpdate() const
 {
     if (!m_data) {
@@ -162,11 +197,12 @@ bool Sarja::dbUpdate() const
 
     QSqlQuery query;
 
-    query.prepare("UPDATE sarja SET nimi = ?, sakkoaika = ?, yhteislahto = ? WHERE id = ?");
+    query.prepare("UPDATE sarja SET nimi = ?, sakko = ?, yhteislahto = ?, aikaraja = ? WHERE id = ?");
 
     query.addBindValue(m_nimi);
-    query.addBindValue(m_sakkoaika);
+    query.addBindValue(m_sakko);
     query.addBindValue(m_yhteislahto);
+    query.addBindValue(m_aikaraja);
     query.addBindValue(m_id);
 
     SQL_EXEC(query, false);
@@ -185,12 +221,17 @@ Sarja * Sarja::dbInsert(QObject *parent, const Tapahtuma *tapahtuma)
 
     QSqlQuery query;
 
-    QString nimi = _("Uusi rata");
+    const bool rogaining = tapahtuma && tapahtuma->tyyppi() == RACE_ROGAINING;
+    const QString nimi = _("Uusi rata");
+    const int sakko = rogaining ? 1 : -1;
+    const QTime aikaraja = rogaining ? QTime(1, 0) : QTime();
 
-    query.prepare("INSERT INTO sarja (tapahtuma, nimi) VALUES (?, ?)");
+    query.prepare("INSERT INTO sarja (tapahtuma, nimi, sakko, aikaraja) VALUES (?, ?, ?, ?)");
 
     query.addBindValue(tapahtuma->id());
     query.addBindValue(nimi);
+    query.addBindValue(sakko);
+    query.addBindValue(aikaraja);
 
     SQL_EXEC(query, 0);
 
@@ -198,7 +239,7 @@ Sarja * Sarja::dbInsert(QObject *parent, const Tapahtuma *tapahtuma)
 
     QSqlDatabase::database().commit();
 
-    return new Sarja(parent, id, nimi, -1, QVariant(), QList<Rasti>(), true);
+    return new Sarja(parent, id, nimi, sakko, QVariant(), aikaraja, QList<Rasti>(), true);
 }
 
 void Sarja::insertRasti(int index, const Rasti &rasti)

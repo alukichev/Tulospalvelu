@@ -1,5 +1,8 @@
+#include <makrot.h>
+
 #include "tapahtumadialog.h"
 #include "ui_tapahtumadialog.h"
+#include "uusitapahtumadialog.h"
 
 TapahtumaDialog::TapahtumaDialog(QWidget *parent) :
     QDialog(parent),
@@ -47,14 +50,12 @@ void TapahtumaDialog::sqlTapahtuma()
 
 void TapahtumaDialog::on_uusiButton_clicked()
 {
-    QString nimi = QInputDialog::getText(this, _("Tulospalvelu"),
-                                         _("Anna tapahtuman nimi:"));
-
-    if (nimi.isEmpty()) {
+    UusiTapahtumaDialog d;
+    if (d.exec() != QDialog::Accepted || d.nimi().isEmpty()) {
         return;
     }
 
-    Tapahtuma::luoUusiTapahtuma(nimi);
+    Tapahtuma::luoUusiTapahtuma(d.nimi(), d.tyyppi());
 
     accept();
 }

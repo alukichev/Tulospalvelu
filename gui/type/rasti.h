@@ -12,19 +12,22 @@ class Rasti
 {
 public:
     explicit Rasti(const QVariant& id, int numero, const QList<int>& koodit, bool data = false);
+    explicit Rasti(const QVariant& id, int numero, int pisteet, const QList<int>& koodit, bool data = false);
 
     QVariant getId() const;
     int getNumero() const;
+    int getPisteet(void) const;
 
     int getKoodi(int i = 0) const;
     bool sisaltaa(int koodi) const;
 
     void setNumero(const QVariant& numero);
+    void setPisteet(const QVariant& pisteet);
     void setKoodi(const QVariant& koodi);
 
     bool dbUpdate() const;
     bool dbDelete() const;
-    static Rasti dbInsert(const Sarja* sarja, int numero = 0, int koodi = 0);
+    static Rasti dbInsert(const Sarja* sarja, int numero = 0, int koodi = 0, int pisteet = 0);
 
     static QList<Rasti> haeRastit(const QVariant &sarjaId);
 
@@ -34,6 +37,7 @@ public:
 private:
     QVariant m_id;          // Tietokanta tunniste
     int m_numero;           // Rastin järjestysnumero
+    int m_pisteet;          // Rastin pistemäärä
     QList<int> m_koodit;    // Rastikoodit
     bool m_data;            // FIXME Kirjoita selitys, Liittyy päivitettävyyteen.
 };

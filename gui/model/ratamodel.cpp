@@ -19,24 +19,23 @@ Qt::ItemFlags RataModel::flags(const QModelIndex &index) const
 
 int RataModel::columnCount(const QModelIndex &parent) const
 {
-    if (parent.isValid()) {
-        return 3;
-    }
+    const bool is_rasti = parent.isValid();
 
-    return 4;
+    return is_rasti ? 4 : 5;
 }
 
 int RataModel::rowCount(const QModelIndex &parent) const
 {
-    if (parent.isValid()) {
-        if (parent.parent().isValid()) {
+    const bool is_rasti = parent.isValid();
+
+    if (!is_rasti)
+        return m_sarjat.count();
+    else {
+        if (parent.parent().isValid())
             return 0;
-        }
 
         return m_sarjat.at(parent.row())->getRastit().count();
     }
-
-    return m_sarjat.count();
 }
 
 QVariant RataModel::headerData(int section, Qt::Orientation orientation, int role) const
@@ -55,9 +54,11 @@ QVariant RataModel::headerData(int section, Qt::Orientation orientation, int rol
     case 1:
         return _("Nimi");
     case 2:
-        return _("Sakkoaika");
+        return m_tapahtuma->tyyppi() == RACE_ROGAINING ? _("Sakkopisteet") : _("Sakkoaika");
     case 3:
         return _("Lähtöaika");
+    case 4:
+        return _("Aikaraja");
     }
 
     return QVariant();
@@ -91,6 +92,7 @@ QVariant RataModel::data(const QModelIndex &index, int role) const
         return QVariant();
     }
 
+    // Sarja
     if (static_cast<int>(index.internalId()) == -1) {
         Sarja* s = m_sarjat.at(index.row());
 
@@ -100,22 +102,21 @@ QVariant RataModel::data(const QModelIndex &index, int role) const
         case 1:
             return s->getNimi();
         case 2:
-            if (s->isSakkoaika()) {
-                return s->getSakkoaika();
-            }
-            return -1;
+            return s->isSakko() ? s->getSakko() : 0;
         case 3:
             if (s->isYhteislahto()) {
                 return s->getYhteislahto().toDateTime();
             }
             return QVariant();
+        case 4:
+            return s->isAikaraja() ? s->getAikaraja().toString("h.mm.ss") : QString();
         }
 
         return QVariant();
     }
 
+    // Rasti
     Rasti r = m_sarjat.at(index.parent().row())->getRastit().at(index.row());
-
     switch (index.column()) {
     case 0:
         return r.getId();
@@ -123,6 +124,8 @@ QVariant RataModel::data(const QModelIndex &index, int role) const
         return r.getNumero();
     case 2:
         return r.getKoodi();
+    case 3:
+        return r.getPisteet();
     }
 
     return QVariant();
@@ -135,47 +138,54 @@ bool RataModel::setData(const QModelIndex &index, const QVariant &value, int rol
     }
 
     bool res = false;
+    bool valid = true;
 
     // Rata editointi
     if (static_cast<int>(index.internalId()) == -1) {
         Sarja *s = m_sarjat.at(index.row());
 
         switch (index.column()) {
-        case 0:
-            res = false;
-            break;
         case 1:
             s->setNimi(value);
-            res = s->dbUpdate();
             break;
         case 2:
-            s->setSakkoaika(value);
-            res = s->dbUpdate();
+            s->setSakko(value);
             break;
         case 3:
             s->setYhteislahto(value);
-            res = s->dbUpdate();
+            break;
+        case 4:
+            s->setAikaraja(value);
+            break;
+        case 0:
+        default:
+            valid = false;
             break;
         }
 
+        res = valid ? s->dbUpdate() : false;
     } else {
         Rasti r = m_sarjat.at(index.parent().row())->getRastit().at(index.row());
 
         switch (index.column()) {
-        case 0:
-            res = false;
-            break;
         case 1:
             r.setNumero(value);
-            res = r.dbUpdate();
             break;
         case 2:
             r.setKoodi(value);
-            res = r.dbUpdate();
+            break;
+        case 3:
+            r.setPisteet(value);
+            break;
+        case 0:
+        default:
+            valid = false;
             break;
         }
 
-        m_sarjat.at(index.parent().row())->replaceRasti(index.row(), r);
+        res = valid ? r.dbUpdate() : false;
+        if (valid)
+            m_sarjat.at(index.parent().row())->replaceRasti(index.row(), r);
     }
 
     if (res) {

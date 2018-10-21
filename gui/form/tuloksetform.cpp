@@ -1,6 +1,84 @@
 #include "tuloksetform.h"
 #include "ui_tuloksetform.h"
 
+static inline QString TimeFormat(const QTime& time)
+{
+    return (time.toString((time.hour() ? _("H.") : _("")) + (time.hour() || time.minute() ? _("mm.") : _("")) + _("ss")));
+}
+
+static QString TuloslistaClassic(const QList<Tulos>& tulokset)
+{
+    QString r;
+    r.reserve(80 * tulokset.size());
+
+    /*
+    tulos += _("%1 %2 %3  %4\n")
+           .arg("Sija", -5)
+           .arg("Kilpailija", -30)
+           .arg("Tulos", -8)
+           .arg("", 9)
+    ;
+    */
+
+    QTime ekaAika = QTime();
+    foreach (const Tulos& t, tulokset) {
+        QString erotus = "";
+        QString aika;
+
+        if (t.m_tila == Tulos::Hyvaksytty) {
+            aika = TimeFormat(t.m_aika);
+
+            if (ekaAika.isValid()) {
+                erotus = "+" + TimeFormat(QTime(0, 0).addSecs(ekaAika.secsTo(t.m_aika)));
+            } else {
+                ekaAika = t.m_aika;
+            }
+        } else {
+            aika = "Ei tulosta";
+        }
+
+        r += _("%1 %2 %3  %4\n")
+               .arg((t.m_tila == Tulos::Hyvaksytty ? (QString::number(t.m_sija) + _(".")) : _("")), 5)
+               .arg(t.m_kilpailija, -30)
+               .arg(aika, 8)
+               .arg(erotus, 9);
+    }
+
+    return r;
+}
+
+static QString TuloslistaRogaining(const QList<Tulos>& tulokset)
+{
+    QString r;
+    r.reserve(80 * tulokset.size());
+
+    // HUOM.: tulokset ovat järjestetty pisteiden mukaan, kärjellä eniten pisteitä
+
+    int karki_pisteet = -1;
+    foreach (const Tulos& t, tulokset) {
+        QString sija, pisteet, aika, erotus = "";
+
+        if (t.m_tila != Tulos::Hyvaksytty) {
+            sija = aika = "";
+            pisteet = "Ei tulosta";
+        }
+        else {
+            if (karki_pisteet < 0)
+                karki_pisteet = t.m_pisteet;
+            else
+                erotus = "-" + QString::number(karki_pisteet - t.m_pisteet);
+
+            sija = QString::number(t.m_sija) + '.';
+            pisteet = QString::number(t.m_pisteet);
+            aika = TimeFormat(t.m_aika);
+        }
+
+        r += _("%1 %2 %3  %4 %5\n").arg(sija, 5).arg(t.m_kilpailija, -30).arg(pisteet, 8).arg(erotus, 9).arg(aika, 8);
+    }
+
+    return r;
+}
+
 TuloksetForm::TuloksetForm(QWidget *parent) :
     UtilForm(parent),
     ui(new Ui::TuloksetForm),
@@ -16,6 +94,12 @@ TuloksetForm::TuloksetForm(QWidget *parent) :
     ui->tulosView->setModel(m_filterModel);
 
     ui->tulosView->addAction(ui->actionPoistaTulos);
+
+    // Pistesuunnistuksessa ei ole väliaikoja HTML- eikä XML- muodossa
+    if (Tapahtuma::tapahtuma()->tyyppi() == RACE_ROGAINING) {
+        ui->tab_2->hide();
+        ui->tab_5->hide();
+    }
 
     on_comboBox_currentIndexChanged(0);
 
@@ -67,13 +151,14 @@ void TuloksetForm::on_closeButton_clicked()
 
 void TuloksetForm::updateTulosEdit()
 {
+    const Tapahtuma *tapahtuma = Tapahtuma::tapahtuma();
     QTextEdit *edit = ui->tulosEdit;
 
     edit->clear();
 
     m_tulosString.clear();
 
-    m_tulosString += _("<h2>%1</h2>\n").arg(Tapahtuma::tapahtuma()->nimi());
+    m_tulosString += _("<h2>%1</h2>\n").arg(tapahtuma->nimi());
 
     foreach (Sarja* s, m_sarjat) {
 
@@ -84,61 +169,21 @@ void TuloksetForm::updateTulosEdit()
         }
 
         m_tulosString += _("</p>\n");
-
-        QList<Tulos> tulokset = m_tulokset.value(s->getNimi());
-        QTime ekaAika = QTime();
-
         m_tulosString += _("<h3><a name=\"%2\"></a>%1</h3>").arg(s->getNimi(), (s->getNimi()).toHtmlEscaped());
 
-        QString tulos;
+        const QList<Tulos> tulokset = m_tulokset.value(s->getNimi());
+        int lahti = tulokset.count(), dnf = 0;
 
-        int lahti = tulokset.count();
-        int dnf = 0;
-
-        foreach (Tulos t, tulokset) {
+        foreach (const Tulos& t, tulokset) {
             if (t.m_tila != Tulos::Hyvaksytty) {
                 dnf++;
             }
         }
 
-        tulos += _("(Lähti: %1, Ei tulosta: %2)\n\n")
-                .arg(QString::number(lahti))
-                .arg(QString::number(dnf))
-        ;
+        const QString status = _("(Lähti: %1, Ei tulosta: %2)\n\n").arg(QString::number(lahti)).arg(QString::number(dnf));
+        const QString tuloslista = tapahtuma->tyyppi() == RACE_CLASSIC ? TuloslistaClassic(tulokset) : TuloslistaRogaining(tulokset);
 
-        /*
-        tulos += _("%1 %2 %3  %4\n")
-               .arg("Sija", -5)
-               .arg("Kilpailija", -30)
-               .arg("Tulos", -8)
-               .arg("", 9)
-        ;
-        */
-
-        foreach (Tulos t, tulokset) {
-            QString erotus = "";
-            QString aika = "";
-
-            if (t.m_tila == Tulos::Hyvaksytty) {
-                aika = timeFormat(t.m_aika);
-
-                if (ekaAika.isValid()) {
-                    erotus = "+" + timeFormat(QTime(0, 0).addSecs(ekaAika.secsTo(t.m_aika)));
-                } else {
-                    ekaAika = t.m_aika;
-                }
-            } else {
-                aika = "Ei tulosta";
-            }
-
-            tulos += _("%1 %2 %3  %4\n")
-                   .arg((t.m_tila == Tulos::Hyvaksytty ? (QString::number(t.m_sija) + _(".")) : _("")), 5)
-                   .arg(t.m_kilpailija, -30)
-                   .arg(aika, 8)
-                   .arg(erotus, 9);
-        }
-
-        m_tulosString += _("<pre>%1</pre>").arg(tulos);
+        m_tulosString += _("<pre>%1%2</pre>").arg(status).arg(tuloslista);
     }
 
     edit->setText(m_tulosString);
@@ -207,7 +252,7 @@ void TuloksetForm::updateLehteenEdit()
                 aika = "Avoin";
                 break;
             case Tulos::Hyvaksytty:
-                aika = timeFormat(t.m_aika);
+                aika = TimeFormat(t.m_aika);
                 sija = _("%1)").arg(QString::number(t.m_sija));
                 break;
             case Tulos::DNF:
@@ -397,7 +442,7 @@ QString TuloksetForm::createValiaika(Sarja* s)
         ;
 
         QString aika;
-        aika = timeFormat(t.m_aika);
+        aika = TimeFormat(t.m_aika);
 
         foreach (Rasti r, s->getRastit()) {
             if (r.getId() == s->getMaalirasti().getId()) {
@@ -424,7 +469,7 @@ QString TuloksetForm::createValiaika(Sarja* s)
 
                 line += _(" %1%2 ")
                         .arg(v.m_sija == -1 ? " " : QString::number(v.m_sija) + "-", 4)
-                        .arg(timeFormat(v.m_aika), -8)
+                        .arg(TimeFormat(v.m_aika), -8)
                 ;
             } else {
                 line += _("         -    ");
@@ -526,7 +571,7 @@ QString TuloksetForm::createRastivali(Sarja* s)
         ;
 
         QString aika;
-        aika = timeFormat(t.m_aika);
+        aika = TimeFormat(t.m_aika);
 
 
         foreach (Rasti r, s->getRastit()) {
@@ -555,7 +600,7 @@ QString TuloksetForm::createRastivali(Sarja* s)
 
                 line += _(" %1%2 ")
                         .arg(v.m_sija == -1 ? " " : QString::number(v.m_sija) + "-", 4)
-                        .arg(timeFormat(v.m_aika), -8)
+                        .arg(TimeFormat(v.m_aika), -8)
                 ;
             } else {
                 line += _("         -    ");
@@ -574,11 +619,6 @@ QString TuloksetForm::createRastivali(Sarja* s)
     res.append(_("<PRE>\n%1</PRE>\n\n").arg(tulos));
 
     return res;
-}
-
-QString TuloksetForm::timeFormat(const QTime &time) const
-{
-    return (time.toString((time.hour() ? _("H.") : _("")) + (time.hour() || time.minute() ? _("mm.") : _("")) + _("ss")));
 }
 
 void TuloksetForm::on_tulosAvaaButton_clicked()

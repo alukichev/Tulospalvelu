@@ -5,7 +5,7 @@
 
 
 // Tietokanta / muut isot muutokset
-#define MAJOR_VERSION "1.2"
+#define MAJOR_VERSION "1.3"
 
 // Bugi korjaukset
 #define MINOR_VERSION "0"
@@ -20,5 +20,8 @@
 #else
 #define SQL_EXEC(Q, R) if (!Q.exec()) { qWarning() << Q.lastQuery() ; qWarning() << Q.lastError() ; QSqlDatabase::database().rollback(); return R; }
 #endif
+
+#define RACE_CLASSIC    0
+#define RACE_ROGAINING  1
 
 #endif // MAKROT_H

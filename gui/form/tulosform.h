@@ -67,6 +67,7 @@ private slots:
     void on_kilpailijaEdit_returnPressed();
 
     void on_aikaTimeEdit_timeChanged(const QTime &date);
+    void on_pisteetEdit_textEdited(const QString& text);
 
 private:
     Ui::TulosForm *ui;

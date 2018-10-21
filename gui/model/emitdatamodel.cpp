@@ -6,6 +6,7 @@ EmitDataModel::EmitDataModel(QObject *parent, QString numero, int vuosi, int kuu
     m_vuosi(vuosi),
     m_kuukausi(kuukausi),
     m_rastit(rastit),
+    m_pisteet(0),
     m_sarja(sarja)
 {
     if (m_rastit.empty()) {
@@ -210,6 +211,7 @@ void EmitDataModel::setSarja(const Sarja *sarja)
 
     int rasti_i = 0;
     int virheita = 0;
+    const bool rogaining = Tapahtuma::tapahtuma()->tyyppi() == RACE_ROGAINING;
 
     foreach (RastiData d, m_rastit) {
         if (d.m_rasti == 0) {
@@ -227,7 +229,7 @@ void EmitDataModel::setSarja(const Sarja *sarja)
         for (int i = 0; i <= virheita && rasti_i + i < rastit.count(); i++) {
             Rasti r = rastit.at(rasti_i + i);
 
-            if (r.sisaltaa(d.m_rasti)) {
+            if (rogaining || r.sisaltaa(d.m_rasti)) {
                 ok = true;
                 break;
             }
@@ -262,13 +264,23 @@ int EmitDataModel::countVirheet() const
         return 0;
     }
 
-    foreach (RastiData d, m_rastit) {
-        if (d.m_aika <= 5 && d.m_rasti != 0) {
-            virheet += 1;
+    if (Tapahtuma::tapahtuma()->tyyppi() == RACE_ROGAINING) {
+        if (m_sarja->isAikaraja()) {
+            const QTime aika = getAika();
+            const int diff_s = m_sarja->getAikaraja().secsTo(aika);
+
+            virheet = diff_s <= 0 ? 0 : (diff_s + 59) / 60; // Joka alkavasta minuutista tulee 1 virhe
         }
     }
+    else {
+        foreach (RastiData d, m_rastit) {
+            if (d.m_aika <= 5 && d.m_rasti != 0) {
+                virheet += 1;
+            }
+        }
 
-    virheet += m_varit.count(QColor(Qt::red));
+        virheet += m_varit.count(QColor(Qt::red));
+    }
 
     return virheet;
 }
@@ -277,6 +289,8 @@ QTime EmitDataModel::getAika() const
 {
     int aika = 0;
     int aika_250 = 0;
+
+    const bool rogaining = Tapahtuma::tapahtuma()->tyyppi() == RACE_ROGAINING;
 
     foreach (RastiData d, m_rastit) {
         if (d.m_rasti == 0) {
@@ -288,7 +302,8 @@ QTime EmitDataModel::getAika() const
             continue;
         }
 
-        if (m_sarja && m_sarja->getMaalirasti().sisaltaa(d.m_rasti)) {
+        // Pistesuunnistuksessa aika otetaan viimeiseksi kerätystä rastileimasta tai maalileimasta
+        if (m_sarja && (rogaining || m_sarja->getMaalirasti().sisaltaa(d.m_rasti))) {
             aika = d.m_aika;
         }
     }
@@ -298,9 +313,22 @@ QTime EmitDataModel::getAika() const
         aika = aika_250;
     }
 
-    if (m_sarja && m_sarja->isSakkoaika()) {
-        return (QTime(0,0).addSecs(aika + countVirheet() * m_sarja->getSakkoaika()));
+    if (m_sarja && !rogaining && m_sarja->isSakko()) {
+        return (QTime(0,0).addSecs(aika + countVirheet() * m_sarja->getSakko()));
     }
 
     return (QTime(0,0).addSecs(aika));
+}
+
+int EmitDataModel::getPisteet(void) const
+{
+    int pisteet = m_pisteet;
+
+    if (m_sarja && Tapahtuma::tapahtuma()->tyyppi() == RACE_ROGAINING) {
+        pisteet -= countVirheet();
+        if (pisteet < 0)
+            pisteet = 0;
+    }
+
+    return pisteet;
 }

@@ -14,12 +14,13 @@ public:
 
     int id() const;
     QString nimi() const;
+    int tyyppi(void) const;
 
 
     static bool valitseTapahtuma(int id);
     static const Tapahtuma* tapahtuma();
 
-    static void luoUusiTapahtuma(const QString& nimi);
+    static void luoUusiTapahtuma(const QString& nimi, int tyyppi = RACE_CLASSIC);
 signals:
 
 public slots:
@@ -27,6 +28,7 @@ public slots:
 private:
     int m_id;
     QString m_nimi;
+    int m_tyyppi;
 
     static Tapahtuma *ms_tapahtuma;
 };

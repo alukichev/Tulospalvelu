@@ -37,6 +37,7 @@ public:
     int countVirheet() const;
 
     QTime getAika() const;
+    int getPisteet(void) const;
 
     void setSarja(const Sarja* sarja);
     const Sarja* getSarja() const;
@@ -47,6 +48,7 @@ protected:
     int m_kuukausi;
     QList<RastiData> m_rastit;
     QList<QColor> m_varit;
+    int m_pisteet;
 
     const Sarja *m_sarja;
 

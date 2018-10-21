@@ -72,8 +72,6 @@ private:
 
     QString createValiaika(Sarja* s);
     QString createRastivali(Sarja* s);
-
-    QString timeFormat(const QTime& time) const;
 };
 
 #endif // TULOKSETFORM_H

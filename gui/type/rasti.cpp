@@ -5,6 +5,16 @@
 Rasti::Rasti(const QVariant& id, int numero, const QList<int> &koodit, bool data) :
     m_id(id),
     m_numero(numero),
+    m_pisteet(0),
+    m_koodit(koodit),
+    m_data(data)
+{
+}
+
+Rasti::Rasti(const QVariant& id, int numero, int pisteet, const QList<int> &koodit, bool data) :
+    m_id(id),
+    m_numero(numero),
+    m_pisteet(pisteet),
     m_koodit(koodit),
     m_data(data)
 {
@@ -19,7 +29,8 @@ QList<Rasti> Rasti::haeRastit(const QVariant &sarjaId)
                 "SELECT\n"
                 "  id,\n"
                 "  numero,\n"
-                "  GROUP_CONCAT(koodi) AS koodi\n"
+                "  GROUP_CONCAT(koodi) AS koodi\n,"
+                "  pisteet\n"
                 "FROM rasti\n"
                 "WHERE sarja = ?\n"
                 "GROUP BY numero\n"
@@ -39,7 +50,7 @@ QList<Rasti> Rasti::haeRastit(const QVariant &sarjaId)
             koodit << koodi.toInt();
         }
 
-        rastit.append(Rasti(r.value("id"), r.value("numero").toInt(), koodit));
+        rastit.append(Rasti(r.value("id"), r.value("numero").toInt(), r.value("pisteet").toInt(), koodit));
     }
 
     return rastit;
@@ -60,6 +71,11 @@ QVariant Rasti::getId() const
 int Rasti::getNumero() const
 {
     return m_numero;
+}
+
+int Rasti::getPisteet() const
+{
+    return m_pisteet;
 }
 
 bool Rasti::sisaltaa(int koodi) const
@@ -85,6 +101,7 @@ QList<Rasti> Rasti::haeRastitData(const QVariant &sarjaId)
                 "SELECT\n"
                 "  id,\n"
                 "  numero,\n"
+                "  pisteet,\n"
                 "  koodi AS koodi\n"
                 "FROM rasti\n"
                 "WHERE sarja = ?\n"
@@ -97,8 +114,9 @@ QList<Rasti> Rasti::haeRastitData(const QVariant &sarjaId)
 
     while (query.next()) {
         QSqlRecord r = query.record();
+        Rasti rasti(r.value("id"), r.value("numero").toInt(), r.value("pisteet").toInt(), QList<int>{} << r.value("koodi").toInt(), true);
 
-        rastit.append(Rasti(r.value("id"), r.value("numero").toInt(), QList<int> () << r.value("koodi").toInt(), true));
+        rastit.append(rasti);
     }
 
     return rastit;
@@ -111,6 +129,15 @@ void Rasti::setNumero(const QVariant &numero)
     }
 
     m_numero = numero.toInt();
+}
+
+void Rasti::setPisteet(const QVariant &pisteet)
+{
+    if (!m_data) {
+        return;
+    }
+
+    m_pisteet = pisteet.toInt();
 }
 
 void Rasti::setKoodi(const QVariant &koodi)
@@ -130,10 +157,11 @@ bool Rasti::dbUpdate() const
 
     QSqlQuery query;
 
-    query.prepare("UPDATE rasti SET numero = ?, koodi = ? WHERE id = ?");
+    query.prepare("UPDATE rasti SET numero = ?, koodi = ?, pisteet = ? WHERE id = ?");
 
     query.addBindValue(m_numero);
     query.addBindValue(m_koodit.at(0));
+    query.addBindValue(m_pisteet);
     query.addBindValue(m_id);
 
     SQL_EXEC(query, false);
@@ -141,7 +169,7 @@ bool Rasti::dbUpdate() const
     return true;
 }
 
-Rasti Rasti::dbInsert(const Sarja *sarja, int numero, int koodi)
+Rasti Rasti::dbInsert(const Sarja *sarja, int numero, int koodi, int pisteet)
 {
     QSqlQuery query;
 
@@ -149,8 +177,10 @@ Rasti Rasti::dbInsert(const Sarja *sarja, int numero, int koodi)
                 "INSERT INTO rasti (\n"
                 "  sarja,\n"
                 "  numero,\n"
-                "  koodi\n"
+                "  koodi,\n"
+                "  pisteet\n"
                 ") VALUES (\n"
+                "  ?,\n"
                 "  ?,\n"
                 "  ?,\n"
                 "  ?\n"
@@ -160,10 +190,11 @@ Rasti Rasti::dbInsert(const Sarja *sarja, int numero, int koodi)
     query.addBindValue(sarja->getId());
     query.addBindValue(numero);
     query.addBindValue(koodi);
+    query.addBindValue(pisteet);
 
     SQL_EXEC(query, Rasti(QVariant(), -1, QList<int>(), false));
 
-    return Rasti(query.lastInsertId(), numero, QList<int> () << koodi, true);
+    return Rasti(query.lastInsertId(), numero, pisteet, QList<int> () << koodi, true);
 }
 
 bool Rasti::dbDelete() const

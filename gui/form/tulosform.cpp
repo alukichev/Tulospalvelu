@@ -113,7 +113,7 @@ void TulosForm::setupForm(const QDateTime& lukuaika, const QString &numero, int 
             lukija_aikaleima = d.m_aika;
         }
 
-        if (d.m_aika <= 5 && d.m_rasti != 0) {
+        if (d.m_aika <= 5 && d.m_rasti != 0 && ui->eiNollaustaLabel->text().isEmpty()) {
             ui->eiNollaustaLabel->setText(_("Suunnistaja ei ole nollannut emittiä!"));
         }
     }
@@ -261,42 +261,34 @@ void TulosForm::valitseSarja()
 
     int suurin = 0;
     int suurin_paino = 0;
+    const bool rogaining = Tapahtuma::tapahtuma()->tyyppi() == RACE_ROGAINING;
 
     QList<RastiData> haettu = m_tulosDataModel->getRastit();
 
-    int sarja_i = 0;
-
-    foreach (Sarja* s, sarjat) {
+    for (int sarja_i = 0; sarja_i < sarjat.size(); ++sarja_i) {
+        const Sarja* s = sarjat.at(sarja_i);
         int paino = 0;
-        int oikeinHaetut = 0;
 
-        int d_i = 1;
+        for (int jarj = 1; jarj <= haettu.size(); ++jarj) {
+            const RastiData& d = haettu.at(jarj - 1);
 
-        foreach (RastiData d, haettu) {
             if (d.m_rasti == 0) {
                 continue;
             }
 
-            foreach (Rasti r, s->getRastit()) {
+            foreach (const Rasti& r, s->getRastit())
                 if (r.sisaltaa(d.m_rasti)) {
                     paino++;
-                }
 
-                if (r.sisaltaa(d.m_rasti) && d_i == r.getNumero()) {
-                    paino++;
-                    oikeinHaetut++;
+                    if (!rogaining && jarj == r.getNumero())
+                        paino++;
                 }
-            }
-
-            d_i++;
         }
 
         if (paino > suurin_paino) {
             suurin_paino = paino;
             suurin = sarja_i;
         }
-
-        sarja_i++;
     }
 
     ui->sarjaBox->setCurrentIndex(suurin);
@@ -314,8 +306,10 @@ void TulosForm::updateTila()
         return;
     }
 
-    // Sakkoajan ollessa käytössä, kaikki tulokset hyväksytään
-    if (s->isSakkoaika() || m_tulosDataModel->countVirheet() == 0) {
+    // Pistesuunnistuksessa kaikki tulokset hyväksytään
+    // Suunnistuksessa tulokset hyväksytään sakon ollessa käytössä
+    if (Tapahtuma::tapahtuma()->tyyppi() == RACE_ROGAINING
+            || s->isSakko() || m_tulosDataModel->countVirheet() == 0) {
         ui->tilaBox->setCurrentIndex(1);
 
         return;
@@ -446,7 +440,8 @@ void TulosForm::on_saveButton_clicked()
     QVariant kilpailijaId;
     QVariant sarjaId;
     QVariant tilaId = getTila();
-    QTime tulos = m_tulosDataModel->getAika();
+    QTime aika = m_tulosDataModel->getAika();
+    int pisteet = m_tulosDataModel->getPisteet();
     QSqlQuery query;
 
     if (sarja) {
@@ -454,7 +449,7 @@ void TulosForm::on_saveButton_clicked()
     }
 
     if (sarja && sarja->isYhteislahto()) {
-        tulos = QTime(0, 0).addSecs(sarja->getYhteislahto().toDateTime().secsTo(m_maaliaika));
+        aika = QTime(0, 0).addSecs(sarja->getYhteislahto().toDateTime().secsTo(m_maaliaika));
     }
     // Tarkistetaan kilpailijan tiedot
     query.prepare("SELECT id FROM kilpailija WHERE nimi = ?");
@@ -490,15 +485,16 @@ void TulosForm::on_saveButton_clicked()
 
     if (m_tulosId.isNull()) {
         // Luodaan tulos
-        query.prepare("INSERT INTO tulos (tapahtuma, emit, kilpailija, sarja, tila, aika, maaliaika) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        query.prepare("INSERT INTO tulos (tapahtuma, emit, kilpailija, sarja, tila, aika, maaliaika, pisteet) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
 
         query.addBindValue(Tapahtuma::tapahtuma()->id());
         query.addBindValue(m_tulosDataModel->getNumero());
         query.addBindValue(kilpailijaId);
         query.addBindValue(sarjaId);
         query.addBindValue(tilaId);
-        query.addBindValue(tulos);
+        query.addBindValue(aika);
         query.addBindValue(m_maaliaika);
+        query.addBindValue(pisteet);
 
         SQL_EXEC(query,);
 
@@ -512,14 +508,15 @@ void TulosForm::on_saveButton_clicked()
         SQL_EXEC(query,);
 
         // Päivitetään tiedot
-        query.prepare("UPDATE tulos SET tapahtuma = ?, emit = ?, kilpailija = ?, sarja = ?, tila = ?, aika = ? WHERE id = ?");
+        query.prepare("UPDATE tulos SET tapahtuma = ?, emit = ?, kilpailija = ?, sarja = ?, tila = ?, aika = ?, pisteet = ? WHERE id = ?");
 
         query.addBindValue(Tapahtuma::tapahtuma()->id());
         query.addBindValue(m_tulosDataModel->getNumero());
         query.addBindValue(kilpailijaId);
         query.addBindValue(sarjaId);
         query.addBindValue(tilaId);
-        query.addBindValue(tulos);
+        query.addBindValue(aika);
+        query.addBindValue(pisteet);
         query.addBindValue(m_tulosId);
 
         SQL_EXEC(query,);
@@ -530,7 +527,7 @@ void TulosForm::on_saveButton_clicked()
     int valiaika_offset = 0;
 
     if (sarja && sarja->isYhteislahto()) {
-        valiaika_offset = tulos.secsTo(m_tulosDataModel->getAika());
+        valiaika_offset = aika.secsTo(m_tulosDataModel->getAika());
     }
 
     foreach (Data d, m_tulosDataModel->getValiajat()) {
@@ -609,6 +606,7 @@ void TulosForm::tarkistaTulos()
                 "  t.emit,\n"
                 "  tila.nimi AS tila,\n"
                 "  t.aika,\n"
+                "  t.pisteet,\n"
                 "  k.nimi AS kilpailija\n"
                 "FROM tulos AS t\n"
                 "  JOIN tulos_tila AS tila ON tila.id = t.tila\n"
@@ -679,6 +677,8 @@ void TulosForm::on_sarjaBox_currentIndexChanged(int index)
     } else {
         ui->aikaTimeEdit->setTime(m_tulosDataModel->getAika());
     }
+
+    ui->pisteetEdit->setText(QString::number(m_tulosDataModel->getPisteet()));
 
     updateTila();
     updateTilaLabel();
@@ -807,6 +807,12 @@ void TulosForm::on_kilpailijaEdit_returnPressed()
 void TulosForm::on_aikaTimeEdit_timeChanged(const QTime &date)
 {
     Q_UNUSED(date);
+    setAllSaved(false);
+}
+
+void TulosForm::on_pisteetEdit_textEdited(const QString& text)
+{
+    Q_UNUSED(text);
     setAllSaved(false);
 }
 

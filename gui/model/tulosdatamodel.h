@@ -41,7 +41,6 @@ private:
     QList<Data> m_data;
     int m_haettu;
     int m_haettuLaite;
-
 };
 
 #endif // TULOSDATAMODEL_H
