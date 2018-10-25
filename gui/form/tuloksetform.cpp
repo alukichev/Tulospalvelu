@@ -54,26 +54,24 @@ static QString TuloslistaRogaining(const QList<Tulos>& tulokset)
 
     // HUOM.: tulokset ovat järjestetty pisteiden mukaan, kärjellä eniten pisteitä
 
-    int karki_pisteet = -1;
+    r += _("%1 %2 %3  %4\n").arg(_("Sija"), 5).arg(_("Nimi"), -30).arg(_("Tulos"), -8).arg(_("Aika"), 8);
+    r += _("%1%2\n").arg(" ", 47).arg(_("Pisteet"), 8);
+    r += _("%1%2\n").arg(" ", 47).arg(_("Sakko"), 8);
+
     foreach (const Tulos& t, tulokset) {
-        QString sija, pisteet, aika, erotus = "";
+        QString sija, tulos_pisteet, aika;
 
         if (t.m_tila != Tulos::Hyvaksytty) {
             sija = aika = "";
-            pisteet = "Ei tulosta";
+            tulos_pisteet = "Ei tulosta";
         }
         else {
-            if (karki_pisteet < 0)
-                karki_pisteet = t.m_pisteet;
-            else
-                erotus = "-" + QString::number(karki_pisteet - t.m_pisteet);
-
             sija = QString::number(t.m_sija) + '.';
-            pisteet = QString::number(t.m_pisteet);
+            tulos_pisteet = QString::number(t.m_pisteet);
             aika = TimeFormat(t.m_aika);
         }
 
-        r += _("%1 %2 %3  %4 %5\n").arg(sija, 5).arg(t.m_kilpailija, -30).arg(pisteet, 8).arg(erotus, 9).arg(aika, 8);
+        r += _("%1 %2 %3  %4\n").arg(sija, 5).arg(t.m_kilpailija, -30).arg(tulos_pisteet, -8).arg(aika, 8);
     }
 
     return r;
