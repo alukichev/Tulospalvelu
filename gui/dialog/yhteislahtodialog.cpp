@@ -44,7 +44,7 @@ bool YhteislahtoDialog::muutaYhteislahdoksi(const QVariant &sarja_id, const QDat
 
     QList< UusiTulos > tulokset;
 
-    Sarja *sarja = Sarja::haeSarja(0, sarja_id);
+    SarjaP sarja = Sarja::haeSarja(sarja_id);
 
     query.prepare(
                 "SELECT\n"
@@ -70,7 +70,7 @@ bool YhteislahtoDialog::muutaYhteislahdoksi(const QVariant &sarja_id, const QDat
                 " *\n"
                 "FROM valiaika\n"
                 "WHERE tulos = ?\n"
-                "ORDER BY numero DESC\n" // Halutaan maaliaika ensin
+                "ORDER BY jarj DESC\n" // Halutaan maaliaika ensin
     );
 
     updateValiaika.prepare(
@@ -100,10 +100,8 @@ bool YhteislahtoDialog::muutaYhteislahdoksi(const QVariant &sarja_id, const QDat
         while (valiaikaQuery.next()) {
             QSqlRecord vr = valiaikaQuery.record();
 
-            if (maalitulos.isNull()
-                && sarja->getMaalirasti().sisaltaa(vr.value("koodi").toInt())) {
+            if (maalitulos.isNull() && sarja->getMaalirasti().sisaltaa(vr.value("rasti").toInt()))
                 maalitulos = vr.value("aika").toTime();
-            }
 
             QTime aika = vr.value("aika").toTime();
 
@@ -138,7 +136,6 @@ bool YhteislahtoDialog::muutaYhteislahdoksi(const QVariant &sarja_id, const QDat
 
     QSqlDatabase::database().commit();
 
-    delete sarja;
     return true;
 }
 

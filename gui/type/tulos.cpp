@@ -33,7 +33,7 @@ Tulos::Tulos(int id, const QString &sarja, int sija, const QString &_emit,
 {
 }
 
-QList<Tulos> Tulos::haeTulokset(const Sarja* sarja)
+QList<Tulos> Tulos::haeTulokset(SarjaP sarja)
 {
 
     QSqlQuery query;

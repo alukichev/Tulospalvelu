@@ -1,11 +1,11 @@
 #include "valiaika.h"
 
-Valiaika::Valiaika(const QVariant& id, int numero, int koodi, const QTime &aika, int sija) :
-    m_id(id),
-    m_numero(numero),
-    m_koodi(koodi),
-    m_aika(aika),
-    m_sija(sija)
+Valiaika::Valiaika(const QVariant& iid, int jjarj, int kkoodi, const QTime &aaika, int ssija) :
+    id(iid),
+    jarj(jjarj),
+    koodi(kkoodi),
+    aika(aaika),
+    sija(ssija)
 {
 }
 
@@ -14,28 +14,24 @@ QList<Valiaika> Valiaika::haeValiajat(const QVariant &tulosId)
     QList<Valiaika> valiajat;
 
     QSqlQuery query;
-
-    query.prepare("SELECT * FROM valiaika WHERE tulos = ? ORDER BY numero ASC");
-
+    query.prepare("SELECT * FROM valiaika WHERE tulos = ? ORDER BY jarj ASC");
     query.addBindValue(tulosId);
-
     SQL_EXEC(query, valiajat);
 
     while (query.next()) {
         QSqlRecord r = query.record();
 
-        valiajat.append(Valiaika(r.value("id"), r.value("numero").toInt(), r.value("koodi").toInt(), r.value("aika").toTime(), -1));
+        valiajat << Valiaika(r.value("id"), r.value("numero").toInt(), r.value("koodi").toInt(), r.value("aika").toTime(), -1);
     }
 
     return valiajat;
 }
 
-QList<Valiaika> Valiaika::haeRastiValiajat(const Sarja *sarja, const Rasti &rasti)
+QList<Valiaika> Valiaika::haeRastiValiajat(SarjaP sarja, int jarj)
 {
     QList<Valiaika> valiajat;
 
     QSqlQuery query;
-
     query.prepare(
                 "SELECT\n"
                 "  v.*\n"
@@ -44,23 +40,19 @@ QList<Valiaika> Valiaika::haeRastiValiajat(const Sarja *sarja, const Rasti &rast
                 "WHERE t.tapahtuma = ?\n"
                 "  AND t.tila = 2\n"
                 "  AND t.sarja = ?\n"
-                "  AND v.numero = ?\n"
+                "  AND v.jarj = ?\n"
                 "ORDER BY v.aika ASC\n"
     );
 
     query.addBindValue(Tapahtuma::tapahtuma()->id());
     query.addBindValue(sarja->getId());
-    query.addBindValue(rasti.getNumero());
+    query.addBindValue(jarj);
 
     SQL_EXEC(query, valiajat);
 
     QList<QSqlRecord> res;
-
-
-
-    while (query.next()) {
+    while (query.next())
         res << query.record();
-    }
 
     foreach (QSqlRecord r, res) {
         int sija = 1;
@@ -76,22 +68,3 @@ QList<Valiaika> Valiaika::haeRastiValiajat(const Sarja *sarja, const Rasti &rast
 
     return valiajat;
 }
-
-/*
-QList<Valiaika> Valiaika::karsiYlimaaraiset(const QList<Valiaika> &valiajat, const QList<Rasti> &rastit)
-{
-    QList<Valiaika> karsitut;
-
-    foreach (Rasti r, rastit) {
-        foreach (Valiaika v, valiajat) {
-            if (r.sisaltaa(v.m_koodi) && r.getNumero() <= v.m_numero) {
-                v.m_numero = r.getNumero(); // Jotta numerointi täsmää
-
-                karsitut.append(v);
-                break;
-            }
-        }
-    }
-
-    return karsitut;
-}*/

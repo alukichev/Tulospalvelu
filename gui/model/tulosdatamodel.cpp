@@ -2,8 +2,8 @@
 
 #include "tulosdatamodel.h"
 
-TulosDataModel::TulosDataModel(QObject *parent, QString numero, int vuosi, int kuukausi, QList<RastiData> rastit, const Sarja *sarja) :
-    EmitDataModel(parent, numero, vuosi, kuukausi, rastit, 0),
+TulosDataModel::TulosDataModel(QObject *parent, QString numero, int vuosi, int kuukausi, QList<RastiData> rastit, SarjaP sarja) :
+    EmitDataModel(parent, numero, vuosi, kuukausi, rastit, SarjaP{}),
     m_haettu(0),
     m_haettuLaite(0)
 {
@@ -68,7 +68,7 @@ int TulosDataModel::rowCount(const QModelIndex &parent) const
     return 1;
 }
 
-void TulosDataModel::setSarja(const Sarja *sarja)
+void TulosDataModel::setSarja(SarjaP sarja)
 {
     beginResetModel();
     m_sarja = sarja;
@@ -77,9 +77,8 @@ void TulosDataModel::setSarja(const Sarja *sarja)
     m_data.clear();
     m_pisteet = 0;
 
-    if (!m_sarja) {
+    if (!m_sarja)
         return;
-    }
 
     const QList<Rasti> rastit = m_sarja->getRastit();
 
@@ -92,9 +91,9 @@ void TulosDataModel::setSarja(const Sarja *sarja)
 
     while (data_i < m_rastit.count() || rasti_i < rastit.count()) {
         RastiData d(-1, -1);
-        if (data_i < m_rastit.count()) {
+
+        if (data_i < m_rastit.count())
            d = m_rastit.at(data_i);
-        }
 
         // ohitetaan 0 koodilla olevat rastit
         if (d.m_rasti == 0) {
@@ -102,15 +101,14 @@ void TulosDataModel::setSarja(const Sarja *sarja)
             continue;
         }
 
-        Rasti r(QVariant(), -1, QList<int>());
-        if (rasti_i < rastit.count()) {
+        Rasti r;
+        if (rasti_i < rastit.count())
             r = rastit.at(rasti_i);
-        }
 
         // Luetut rastit loppuivat
         if (d.m_rasti == -1 && d.m_aika == -1) {
-            if (!rogaining && r.getNumero() != -1) {
-                m_data.append(Data(r.getNumero(), _("-"), _("rasti puuttuu")));
+            if (!rogaining && rasti_i < rastit.count()) {
+                m_data.append(Data(rasti_i + 1, _("-"), _("rasti puuttuu")));
                 m_varit.append(QColor(Qt::red));
             }
             rasti_i++;
@@ -129,10 +127,10 @@ void TulosDataModel::setSarja(const Sarja *sarja)
         if (rogaining) {
             int piste_inc = 0;
 
-            foreach (const Rasti& rr, rastit)
-                if (rr.sisaltaa(d.m_rasti)) {
-                    int num = rr.getNumero();
+            for (int num = 1; num <= rastit.size(); ++num) {
+                const Rasti& rr = rastit.at(num - 1);
 
+                if (rr.sisaltaa(d.m_rasti)) {
                     // Tunnetuista rasteista saadaan pisteet vain kerran
                     if (!haetut_rastit.contains(num)) {
                         piste_inc = rr.getPisteet();
@@ -141,6 +139,7 @@ void TulosDataModel::setSarja(const Sarja *sarja)
 
                     break;
                 }
+            }
 
             m_data.append(Data(data_i + 1, d.m_rasti, d.m_aika));
             m_varit.append(QColor(piste_inc ? Qt::darkGreen : Qt::gray));
@@ -153,10 +152,11 @@ void TulosDataModel::setSarja(const Sarja *sarja)
             // Suunnistus - rastit haettava järjestyksessä
             // Oikein ja oikeassa paikassa haettu rasti
             if (r.sisaltaa(d.m_rasti)) {
-                m_data.append(Data(r.getNumero(), d.m_rasti, d.m_aika));
+                m_data.append(Data(rasti_i + 1, d.m_rasti, d.m_aika));
                 m_varit.append(QColor(Qt::darkGreen));
                 data_i++;
                 rasti_i++;
+
                 continue;
             }
 
@@ -175,6 +175,7 @@ void TulosDataModel::setSarja(const Sarja *sarja)
                 m_data.append(Data(_("?"), d.m_rasti, d.m_aika));
                 m_varit.append(QColor(Qt::gray));
                 data_i++;
+
                 continue;
             }
 
@@ -197,7 +198,7 @@ void TulosDataModel::setSarja(const Sarja *sarja)
             for (int i = rasti_i + 1; i < rastit.count(); i++) {
                 Rasti rr = rastit.at(i);
 
-                if (rr.sisaltaa(r.getKoodi())) {
+                if (rr.sisaltaa(r.getKoodi(0))) {
                     last = false;
                     break;
                 }
@@ -207,11 +208,14 @@ void TulosDataModel::setSarja(const Sarja *sarja)
             if (found && last) {
                 for (; data_i < m_rastit.count(); data_i++) {
                     RastiData dd = m_rastit.at(data_i);
+
                     if (r.sisaltaa(dd.m_rasti)) {
-                        m_data.append(Data(r.getNumero(), dd.m_rasti, dd.m_aika));
+                        m_data.append(Data(rasti_i + 1, dd.m_rasti, dd.m_aika));
                         m_varit.append(QColor(Qt::darkGreen));
+
                         break;
-                    } else {
+                    }
+                    else {
                         m_data.append(Data(_("?"), dd.m_rasti, dd.m_aika));
                         m_varit.append(QColor(Qt::gray));
                     }
@@ -234,11 +238,10 @@ void TulosDataModel::setSarja(const Sarja *sarja)
                 }
             }
 
-            m_data.append(Data(r.getNumero(), _("-"), tila));
+            m_data.append(Data(rasti_i + 1, _("-"), tila));
             m_varit.append(QColor(Qt::red));
 
             rasti_i++;
-            continue;
         }
     }
 
@@ -249,15 +252,12 @@ QList<Data> TulosDataModel::getValiajat() const
 {
     QList<Data> valiajat;
 
-    if (!m_sarja) {
+    if (!m_sarja)
         return valiajat;
-    }
 
-    for (int i = 0; i < m_data.count(); i++) {
-        if (m_varit.at(i) == Qt::darkGreen) {
+    for (int i = 0; i < m_data.count(); i++)
+        if (m_varit.at(i) == Qt::darkGreen)
             valiajat << m_data.at(i);
-        }
-    }
 
     return valiajat;
 }

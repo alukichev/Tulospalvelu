@@ -25,7 +25,7 @@ class TulosDataModel : public EmitDataModel
 {
     Q_OBJECT
 public:
-    explicit TulosDataModel(QObject *parent, QString numero, int vuosi, int kuukausi, QList<RastiData> rastit, const Sarja* sarja = 0);
+    explicit TulosDataModel(QObject *parent, QString numero, int vuosi, int kuukausi, QList<RastiData> rastit, SarjaP sarja = SarjaP{});
 
     virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
 
@@ -33,7 +33,7 @@ public:
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const;
 
-    void setSarja(const Sarja* sarja);
+    void setSarja(SarjaP sarja);
 
     QList<Data> getValiajat() const;
 

@@ -160,11 +160,10 @@ void MainWindow::connectDatabase()
     SQL_EXEC(query,);
 #endif
 
-    // Mikäli kysely epäonnistuu ei tietokantaa ole ja se täytyy luoda
     query.prepare("SELECT COUNT(*) FROM tulos WHERE tapahtuma = ?");
-
     query.addBindValue(Tapahtuma::tapahtuma()->id());
 
+    // Mikäli kysely epäonnistuu ei tietokantaa ole ja se täytyy luoda
     SQL_EXEC(query, );
 
     m_databaseOK = true;
@@ -365,7 +364,7 @@ void MainWindow::updateKilpailijoita()
 
 void MainWindow::on_actionTestEmitReader_triggered()
 {
-    if (Sarja::haeSarjat(this).count() == 0 &&
+    if (Sarja::haeSarjatRO().count() == 0 &&
             QMessageBox::question(this, _("Tulospalvelu"),
                                   _("Ratoja ei ole määritetty!\nHaluatko varmasti jatkaa?"),
                                   QMessageBox::Yes | QMessageBox::No,
@@ -699,7 +698,7 @@ void MainWindow::setupSerialMenu()
 
 void MainWindow::handleSerialMenu(QAction *a)
 {
-    if (Sarja::haeSarjat(this).count() == 0 &&
+    if (Sarja::haeSarjatRO().count() == 0 &&
             QMessageBox::question(this, _("Tulospalvelu"),
                                   _("Ratoja ei ole määritetty!\nHaluatko varmasti jatkaa?"),
                                   QMessageBox::Yes | QMessageBox::No,
@@ -730,7 +729,7 @@ void MainWindow::on_actionAsetukset_triggered()
 
 void MainWindow::on_actionPaivitaValiajat_triggered()
 {
-    SarjaValintaDialog d(this, Sarja::haeSarjat(this, Tapahtuma::tapahtuma()));
+    SarjaValintaDialog d(this, Sarja::haeSarjatRO(Tapahtuma::tapahtuma()));
 
     if (d.exec() != QDialog::Accepted) {
         return;

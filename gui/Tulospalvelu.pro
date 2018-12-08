@@ -80,7 +80,8 @@ HEADERS  += mainwindow.h \
     dialog/sarjavalintadialog.h \
     dialog/yhteislahtodialog.h \
     delegate/tulospalveludelegate.h \
-    dialog/uusitapahtumadialog.h
+    dialog/uusitapahtumadialog.h \
+    type/heap.h
 
 FORMS    += mainwindow.ui \
     widget/testemitreaderwidget.ui \

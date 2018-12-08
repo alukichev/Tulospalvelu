@@ -11,23 +11,21 @@
 
 #include "makrot.h"
 
-class Valiaika
+struct Valiaika
 {
-public:
-    Valiaika(const QVariant& id, int numero, int koodi, const QTime& aika, int sija);
-
-    //static QList<Valiaika> karsiYlimaaraiset(const QList<Valiaika>& valiajat, const QList<Rasti>& rastit);
-
     static QList<Valiaika> haeValiajat(const QVariant& tulosId);
+    static QList<Valiaika> haeRastiValiajat(SarjaP sarja, int jarj);
 
-    static QList<Valiaika> haeRastiValiajat(const Sarja* sarja, const Rasti& rasti);
-//private:
-    QVariant m_id;  // Tietokanta tunniste
-    int m_numero;   // Rastin järjestysnumero
-    int m_koodi;    // Emitkoodi
-    QTime m_aika;   // Aika
-    int m_sija;     // Sijoitus
+    inline Valiaika(void) : id(), jarj(0), koodi(0), aika(), sija(0) {}
 
+    QVariant id;  // Tietokanta tunniste
+    int jarj;     // Rastin järjestysnumero
+    int koodi;    // Rastikoodi
+    QTime aika;   // Aika
+    int sija;     // Sijoitus
+
+private:
+    Valiaika(const QVariant& iid, int jjarj, int kkoodi, const QTime& aaika, int ssija);
 };
 
 #endif // VALIAIKA_H

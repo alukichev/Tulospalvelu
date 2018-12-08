@@ -56,7 +56,7 @@ private:
     QSortFilterProxyModel *m_filterModel;
     QSqlQueryModel *m_tulosModel;
 
-    QList<Sarja*> m_sarjat;
+    QList<SarjaP> m_sarjat;
     QMap< QString, QList<Tulos> > m_tulokset;
 
     QString m_tulosString;
@@ -70,8 +70,8 @@ private:
     void updateLehteenEdit();
     void updateXMLEdit();
 
-    QString createValiaika(Sarja* s);
-    QString createRastivali(Sarja* s);
+    QString createValiaika(SarjaP s);
+    QString createRastivali(SarjaP s);
 };
 
 #endif // TULOKSETFORM_H

@@ -16,15 +16,15 @@ class SarjaValintaDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit SarjaValintaDialog(QWidget *parent, QList< Sarja* > sarjat);
+    explicit SarjaValintaDialog(QWidget *parent, QList<SarjaP> sarjat);
     ~SarjaValintaDialog();
 
-    Sarja* getSarja() const;
+    SarjaP getSarja() const;
 
 private:
     Ui::SarjaValintaDialog *ui;
 
-    QList<Sarja*> m_sarjat;
+    QList<SarjaP> m_sarjat;
 };
 
 #endif // SARJAVALINTADIALOG_H

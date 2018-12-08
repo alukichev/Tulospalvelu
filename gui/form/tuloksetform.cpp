@@ -158,11 +158,11 @@ void TuloksetForm::updateTulosEdit()
 
     m_tulosString += _("<h2>%1</h2>\n").arg(tapahtuma->nimi());
 
-    foreach (Sarja* s, m_sarjat) {
+    foreach (SarjaP s, m_sarjat) {
 
         m_tulosString += _("<p>");
 
-        foreach (const Sarja *s, m_sarjat) {
+        foreach (SarjaP s, m_sarjat) {
             m_tulosString += _("<a href=\"#%2\">%1</a> ").arg(s->getNimi(), (s->getNimi()).toHtmlEscaped());
         }
 
@@ -204,7 +204,7 @@ void TuloksetForm::updateValiaikaEdit()
 
     m_valiaikaString += _("</p>\n");
 */
-    foreach (Sarja* s, m_sarjat) {
+    foreach (SarjaP s, m_sarjat) {
         m_valiaikaString.append(createValiaika(s));
         m_valiaikaString.append(createRastivali(s));
     }
@@ -219,7 +219,7 @@ void TuloksetForm::updateLehteenEdit()
 
     edit->clear();
 
-    foreach (Sarja* s, m_sarjat) {
+    foreach (SarjaP s, m_sarjat) {
         QList<Tulos> tulokset = m_tulokset.value(s->getNimi());
 
         QString tulos;
@@ -278,7 +278,7 @@ void TuloksetForm::updateXMLEdit()
 
     writer.writeStartXML();
 
-    foreach (Sarja *s, m_sarjat) {
+    foreach (SarjaP s, m_sarjat) {
         writer.writeEventClass(m_tulokset.value(s->getNimi()), s);
     }
 
@@ -326,11 +326,10 @@ void TuloksetForm::on_updateButton_clicked()
 
     m_tulokset.clear();
 
-    m_sarjat = Sarja::haeSarjat(this);
+    m_sarjat = Sarja::haeSarjatRO();
 
-    foreach (Sarja* s, m_sarjat) {
+    foreach (SarjaP s, m_sarjat)
         m_tulokset.insert(s->getNimi(), Tulos::haeTulokset(s));
-    }
 
     sqlTulokset();
 
@@ -401,7 +400,7 @@ void TuloksetForm::on_fileButton_clicked()
     file.close();
 }
 
-QString TuloksetForm::createValiaika(Sarja* s)
+QString TuloksetForm::createValiaika(SarjaP s)
 {
     QString res;
     QList<Tulos> tulokset = m_tulokset.value(s->getNimi());
@@ -415,16 +414,18 @@ QString TuloksetForm::createValiaika(Sarja* s)
 
     QMap<int, QList<Valiaika> > rastienValiajat;
 
-    foreach (Rasti r, s->getRastit()) {
+    for (int i = 0; i < s->getRastit().size(); ++i) {
+        const Rasti& r = s->getRastit().at(i);
+
         if (r.getId() == s->getMaalirasti().getId()) {
             continue;
         }
 
-        rastienValiajat.insert(r.getId().toInt(), Valiaika::haeRastiValiajat(s, r));
+        rastienValiajat.insert(r.getId().toInt(), Valiaika::haeRastiValiajat(s, i + 1));
 
         tulos +=
             _(" %1")
-            .arg("       " + QString::number(r.getNumero()) + ".", -13)
+            .arg("       " + QString::number(i + 1) + ".", -13)
         ;
     }
 
@@ -442,16 +443,18 @@ QString TuloksetForm::createValiaika(Sarja* s)
         QString aika;
         aika = TimeFormat(t.m_aika);
 
-        foreach (Rasti r, s->getRastit()) {
+        for (int i = 0; i < s->getRastit().size(); ++i) {
+            const Rasti& r = s->getRastit().at(i);
+
             if (r.getId() == s->getMaalirasti().getId()) {
                 continue;
             }
 
-            Valiaika v(QVariant(), 0, 0, QTime(), 0);
+            Valiaika v;
             bool found = false;
 
             foreach (v, t.m_valiajat) {
-                if (r.getNumero() == v.m_numero) {
+                if (i + 1 == v.jarj) {
                     found = true;
                     break;
                 }
@@ -459,15 +462,15 @@ QString TuloksetForm::createValiaika(Sarja* s)
 
             if (found) {
                 foreach (Valiaika tmp_v, rastienValiajat.value(r.getId().toInt())) {
-                    if (tmp_v.m_id == v.m_id) {
+                    if (tmp_v.id == v.id) {
                         v = tmp_v;
                         break;
                     }
                 }
 
                 line += _(" %1%2 ")
-                        .arg(v.m_sija == -1 ? " " : QString::number(v.m_sija) + "-", 4)
-                        .arg(TimeFormat(v.m_aika), -8)
+                        .arg(v.sija == -1 ? " " : QString::number(v.sija) + "-", 4)
+                        .arg(TimeFormat(v.aika), -8)
                 ;
             } else {
                 line += _("         -    ");
@@ -487,7 +490,7 @@ QString TuloksetForm::createValiaika(Sarja* s)
     return res;
 }
 
-QString TuloksetForm::createRastivali(Sarja* s)
+QString TuloksetForm::createRastivali(SarjaP s)
 {
     QString res;
 
@@ -501,14 +504,13 @@ QString TuloksetForm::createRastivali(Sarja* s)
 
         //foreach (Valiaika v, Valiaika::karsiYlimaaraiset(t.m_valiajat, s->getRastit())) {
         foreach (Valiaika v, t.m_valiajat) {
-            QTime tulos =  v.m_aika;
+            QTime tulos = v.aika;
 
             if (!edellinen.isNull()) {
-                v.m_aika = QTime(0, 0).addSecs(edellinen.secsTo(v.m_aika));
+                v.aika = QTime(0, 0).addSecs(edellinen.secsTo(v.aika));
             }
 
             valiajat.append(v);
-
             edellinen = tulos;
         }
 
@@ -517,7 +519,7 @@ QString TuloksetForm::createRastivali(Sarja* s)
     }
 
     // Kerätään ajat rasteittain
-    foreach (Rasti r, s->getRastit()) {
+    for (int i = 0; i < s->getRastit().size(); ++i) {
         QList<QTime> ajat;
 
         foreach (Tulos t, tulokset) {
@@ -526,14 +528,14 @@ QString TuloksetForm::createRastivali(Sarja* s)
             }
 
             foreach (Valiaika v, t.m_valiajat) {
-                if (v.m_numero == r.getNumero()) {
-                    ajat.append(v.m_aika);
+                if (v.jarj == i + 1) {
+                    ajat.append(v.aika);
                     break;
                 }
             }
         }
 
-        rastiAjat.insert(r.getNumero(), ajat);
+        rastiAjat.insert(i + 1, ajat);
     }
 
     res.append(_("<H3>%1   Rastivälien ajat\n\n</H3>").arg(s->getNimi()));
@@ -543,16 +545,18 @@ QString TuloksetForm::createRastivali(Sarja* s)
         .arg("Nimi", -30)
     ;
 
-    foreach (Rasti r, s->getRastit()) {
+    for (int i = 0; i < s->getRastit().size(); ++i) {
+        const Rasti& r = s->getRastit().at(i);
+
         if (r.getId() == s->getMaalirasti().getId()) {
             tulos +=
                 _(" %1")
-                .arg("    " + QString::number(r.getNumero() - 1) + "-M ", -13)
+                .arg("    " + QString::number(i) + "-M ", -13)
             ;
         } else {
             tulos +=
                 _(" %1")
-                .arg("    " + QString::number(r.getNumero() - 1) + "-" + QString::number(r.getNumero()) + " ", -13)
+                .arg("    " + QString::number(i) + "-" + QString::number(i + 1) + " ", -13)
             ;
         }
     }
@@ -572,12 +576,12 @@ QString TuloksetForm::createRastivali(Sarja* s)
         aika = TimeFormat(t.m_aika);
 
 
-        foreach (Rasti r, s->getRastit()) {
-            Valiaika v(QVariant(), 0, 0, QTime(), 0);
+        for (int i = 0; i < s->getRastit().size(); ++i) {
+            Valiaika v;
             bool found = false;
 
             foreach (v, t.m_valiajat) {
-                if (r.getNumero() == v.m_numero) {
+                if (i + 1 == v.jarj) {
                     found = true;
                     break;
                 }
@@ -585,11 +589,11 @@ QString TuloksetForm::createRastivali(Sarja* s)
 
             if (found) {
                 if (t.m_tila == Tulos::Hyvaksytty) {
-                    v.m_sija = 1;
+                    v.sija = 1;
 
-                    foreach (QTime t, rastiAjat.value(v.m_numero)) {
-                        if (t < v.m_aika) {
-                            v.m_sija++;
+                    foreach (QTime t, rastiAjat.value(v.jarj)) {
+                        if (t < v.aika) {
+                            v.sija++;
                             //continue;
                         }
                     }
@@ -597,8 +601,8 @@ QString TuloksetForm::createRastivali(Sarja* s)
                 }
 
                 line += _(" %1%2 ")
-                        .arg(v.m_sija == -1 ? " " : QString::number(v.m_sija) + "-", 4)
-                        .arg(TimeFormat(v.m_aika), -8)
+                        .arg(v.sija == -1 ? " " : QString::number(v.sija) + "-", 4)
+                        .arg(TimeFormat(v.aika), -8)
                 ;
             } else {
                 line += _("         -    ");

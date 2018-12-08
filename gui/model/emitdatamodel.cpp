@@ -1,6 +1,6 @@
 #include "emitdatamodel.h"
 
-EmitDataModel::EmitDataModel(QObject *parent, QString numero, int vuosi, int kuukausi, QList<RastiData> rastit, const Sarja *sarja) :
+EmitDataModel::EmitDataModel(QObject *parent, QString numero, int vuosi, int kuukausi, QList<RastiData> rastit, SarjaP sarja) :
     QAbstractItemModel(parent),
     m_numero(numero),
     m_vuosi(vuosi),
@@ -10,12 +10,13 @@ EmitDataModel::EmitDataModel(QObject *parent, QString numero, int vuosi, int kuu
     m_sarja(sarja)
 {
     if (m_rastit.empty()) {
-        for (int i = 0; i < 50; i++) {
+        m_rastit.reserve(50);
+
+        for (int i = 0; i < 50; i++)
             m_rastit.append(RastiData(0, 0));
-        }
     }
 
-    setSarja(m_sarja);
+    setSarja(sarja);
 }
 
 int EmitDataModel::rowCount(const QModelIndex &parent) const
@@ -95,7 +96,7 @@ QVariant EmitDataModel::data(const QModelIndex &index, int role) const
     }
 
     if (role == Qt::ForegroundRole) {
-        if (m_sarja && static_cast<int>(index.internalId()) > -1) {
+        if (!!m_sarja && static_cast<int>(index.internalId()) > -1) {
             return m_varit.at(index.row());
         }
 
@@ -187,12 +188,12 @@ QList<RastiData> EmitDataModel::getRastit() const
     return m_rastit;
 }
 
-const Sarja * EmitDataModel::getSarja() const
+SarjaP EmitDataModel::getSarja() const
 {
     return m_sarja;
 }
 
-void EmitDataModel::setSarja(const Sarja *sarja)
+void EmitDataModel::setSarja(SarjaP sarja)
 {
     beginResetModel();
     m_sarja = sarja;
@@ -200,9 +201,8 @@ void EmitDataModel::setSarja(const Sarja *sarja)
     m_varit.clear();
 
     if (!m_sarja) {
-        for (int i = 0; i < m_rastit.count(); i++) {
+        for (int i = 0; i < m_rastit.count(); i++)
             m_varit.append(QColor(Qt::black));
-        }
 
         return;
     }
@@ -213,7 +213,7 @@ void EmitDataModel::setSarja(const Sarja *sarja)
     int virheita = 0;
     const bool rogaining = Tapahtuma::tapahtuma()->tyyppi() == RACE_ROGAINING;
 
-    foreach (RastiData d, m_rastit) {
+    foreach (const RastiData& d, m_rastit) {
         if (d.m_rasti == 0) {
             m_varit.append(QColor(Qt::gray));
             continue;
@@ -246,11 +246,9 @@ void EmitDataModel::setSarja(const Sarja *sarja)
 
     // Mikäli päästiin maaliin, voidaan merkitä väärin haetut harmaaksi
     if (rasti_i == rastit.count()) {
-        for (int i = 0; i < m_varit.count(); i++) {
-            if (m_varit.at(i) == QColor(Qt::red)) {
+        for (int i = 0; i < m_varit.count(); i++)
+            if (m_varit.at(i) == QColor(Qt::red))
                 m_varit.replace(i, QColor(Qt::gray));
-            }
-        }
     }
 
     endResetModel();
@@ -260,9 +258,8 @@ int EmitDataModel::countVirheet() const
 {
     int virheet = 0;
 
-    if (m_sarja == 0) {
+    if (!m_sarja)
         return 0;
-    }
 
     if (Tapahtuma::tapahtuma()->tyyppi() == RACE_ROGAINING) {
         if (m_sarja->isAikaraja()) {
@@ -273,10 +270,9 @@ int EmitDataModel::countVirheet() const
         }
     }
     else {
-        foreach (RastiData d, m_rastit) {
-            if (d.m_aika <= 5 && d.m_rasti != 0) {
-                virheet += 1;
-            }
+        foreach (const RastiData& d, m_rastit) {
+            if (d.m_aika <= 5 && d.m_rasti != 0)
+                ++virheet;
         }
 
         virheet += m_varit.count(QColor(Qt::red));
@@ -292,10 +288,9 @@ QTime EmitDataModel::getAika() const
 
     const bool rogaining = Tapahtuma::tapahtuma()->tyyppi() == RACE_ROGAINING;
 
-    foreach (RastiData d, m_rastit) {
-        if (d.m_rasti == 0) {
+    foreach (const RastiData& d, m_rastit) {
+        if (d.m_rasti == 0)
             continue;
-        }
 
         if (d.m_rasti == 250) {
             aika_250 = d.m_aika;
@@ -303,9 +298,8 @@ QTime EmitDataModel::getAika() const
         }
 
         // Pistesuunnistuksessa aika otetaan viimeiseksi kerätystä rastileimasta tai maalileimasta
-        if (m_sarja && (rogaining || m_sarja->getMaalirasti().sisaltaa(d.m_rasti))) {
+        if (m_sarja && (rogaining || m_sarja->getMaalirasti().sisaltaa(d.m_rasti)))
             aika = d.m_aika;
-        }
     }
 
     if (aika == 0) {
@@ -313,18 +307,17 @@ QTime EmitDataModel::getAika() const
         aika = aika_250;
     }
 
-    if (m_sarja && !rogaining && m_sarja->isSakko()) {
-        return (QTime(0,0).addSecs(aika + countVirheet() * m_sarja->getSakko()));
-    }
+    if (!!m_sarja && !rogaining && m_sarja->isSakko())
+        aika += countVirheet() * m_sarja->getSakko();
 
-    return (QTime(0,0).addSecs(aika));
+    return QTime(0,0).addSecs(aika);
 }
 
 int EmitDataModel::getPisteet(void) const
 {
     int pisteet = m_pisteet;
 
-    if (m_sarja && Tapahtuma::tapahtuma()->tyyppi() == RACE_ROGAINING) {
+    if (!!m_sarja && Tapahtuma::tapahtuma()->tyyppi() == RACE_ROGAINING) {
         pisteet -= countVirheet();
         if (pisteet < 0)
             pisteet = 0;

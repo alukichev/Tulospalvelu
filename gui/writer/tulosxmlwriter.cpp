@@ -37,7 +37,7 @@ void TulosXMLWriter::writeEndXML()
     m_stream.writeEndDocument();
 }
 
-void TulosXMLWriter::writeEventClass(const QList<Tulos> &tulokset, const Sarja *sarja)
+void TulosXMLWriter::writeEventClass(const QList<Tulos> &tulokset, SarjaP sarja)
 {
     m_stream.writeStartElement("EventClass");
     m_stream.writeEmptyElement("EventCode");
@@ -51,7 +51,7 @@ void TulosXMLWriter::writeEventClass(const QList<Tulos> &tulokset, const Sarja *
     m_stream.writeEndElement(); // EventClass
 }
 
-void TulosXMLWriter::writeCompetitor(const Tulos &tulos, const Sarja *sarja)
+void TulosXMLWriter::writeCompetitor(const Tulos &tulos, SarjaP sarja)
 {
     m_stream.writeStartElement("Competitor");
 
@@ -63,6 +63,7 @@ void TulosXMLWriter::writeCompetitor(const Tulos &tulos, const Sarja *sarja)
     m_stream.writeTextElement("Emit", tulos.m_emit);
     m_stream.writeEmptyElement("ClubID");
     m_stream.writeEmptyElement("ClubName");
+
     if (tulos.m_tila == Tulos::Hyvaksytty) {
         m_stream.writeTextElement("StartTime", tulos.m_maaliaika.time().addSecs(tulos.m_aika.secsTo(QTime(0, 0))).toString("HH:mm:ss"));
         m_stream.writeTextElement("STSecs", QString::number(-tulos.m_maaliaika.time().addSecs(tulos.m_aika.secsTo(QTime(0, 0))).secsTo(QTime(0, 0))));
@@ -76,12 +77,13 @@ void TulosXMLWriter::writeCompetitor(const Tulos &tulos, const Sarja *sarja)
 
     m_stream.writeStartElement("SplitTimes");
 
-    foreach (Rasti r, sarja->getRastit()) {
-        Valiaika v(QVariant(), 0, 0, QTime(), 0);
+    for (int i = 0; i < sarja->getRastit().size(); ++i) {
+        const Rasti& r = sarja->getRastit().at(i);
+        Valiaika v;
         bool found = false;
 
         foreach (v, tulos.m_valiajat) {
-            if (r.sisaltaa(v.m_koodi)) {
+            if (r.sisaltaa(v.koodi)) {
                 found = true;
                 break;
             }
@@ -93,14 +95,14 @@ void TulosXMLWriter::writeCompetitor(const Tulos &tulos, const Sarja *sarja)
 
         m_stream.writeStartElement("Control");
 
-        m_stream.writeTextElement("ControlOrder", QString::number(r.getNumero()));
-        if (sarja->getMaalirasti().sisaltaa(v.m_koodi)) {
+        m_stream.writeTextElement("ControlOrder", QString::number(i + 1));
+        if (sarja->getMaalirasti().sisaltaa(v.koodi)) {
             m_stream.writeTextElement("CCode", "200");
         } else {
             m_stream.writeTextElement("CCode", QString::number(r.getKoodi()));
         }
-        m_stream.writeTextElement("ControlTime", v.m_aika.toString("HH:mm:ss"));
-        m_stream.writeTextElement("CTSecs", QString::number(-v.m_aika.secsTo(QTime(0, 0))));
+        m_stream.writeTextElement("ControlTime", v.aika.toString("HH:mm:ss"));
+        m_stream.writeTextElement("CTSecs", QString::number(-v.aika.secsTo(QTime(0, 0))));
 
         m_stream.writeEndElement(); // Control
     }

@@ -19,13 +19,13 @@ public:
     explicit TulosXMLWriter(QByteArray* bytearray);
 
     void writeStartXML();
-    void writeEventClass(const QList<Tulos>& tulokset, const Sarja* sarja);
+    void writeEventClass(const QList<Tulos>& tulokset, SarjaP sarja);
     void writeEndXML();
 
 private:
     QXmlStreamWriter m_stream;
 
-    void writeCompetitor(const Tulos& tulos, const Sarja* sarja);
+    void writeCompetitor(const Tulos& tulos, SarjaP sarja);
 };
 
 #endif // TULOSXMLWRITER_H

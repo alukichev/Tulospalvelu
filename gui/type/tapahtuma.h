@@ -19,6 +19,7 @@ public:
 
     static bool valitseTapahtuma(int id);
     static const Tapahtuma* tapahtuma();
+    static inline int Id(void) { return tapahtuma()->id(); }
 
     static void luoUusiTapahtuma(const QString& nimi, int tyyppi = RACE_CLASSIC);
 signals:

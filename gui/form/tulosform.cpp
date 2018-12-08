@@ -102,7 +102,7 @@ void TulosForm::setupForm(const QDateTime& lukuaika, const QString &numero, int 
     int maali_aikaleima = 0;
     int lukija_aikaleima = 0;
 
-    const Sarja* sarja = m_tulosDataModel->getSarja();
+    SarjaP sarja = m_tulosDataModel->getSarja();
 
     foreach (RastiData d, rastit) {
         if (sarja && sarja->getMaalirasti().sisaltaa(d.m_rasti)) {
@@ -188,8 +188,7 @@ void TulosForm::setupForm(const QVariant &tulosId)
                 r.value("emit").toString(),
                 r.value("vuosi").toInt(),
                 r.value("kuukausi").toInt(),
-                RastiData::luettuRasit(r.value("luettu_emit")),
-                0
+                RastiData::luettuRasit(r.value("luettu_emit"))
     );
 
     ui->emitDataView->setModel(m_tulosDataModel);
@@ -252,7 +251,7 @@ void TulosForm::sqlSarja()
 
 void TulosForm::valitseSarja()
 {
-    QList<Sarja*> sarjat = Sarja::haeSarjat(this);
+    QList<SarjaP> sarjat = Sarja::haeSarjatRO();
 
     // Sarjoja ei ole asetettu
     if (sarjat.count() == 0) {
@@ -266,7 +265,7 @@ void TulosForm::valitseSarja()
     QList<RastiData> haettu = m_tulosDataModel->getRastit();
 
     for (int sarja_i = 0; sarja_i < sarjat.size(); ++sarja_i) {
-        const Sarja* s = sarjat.at(sarja_i);
+        SarjaP s = sarjat.at(sarja_i);
         int paino = 0;
 
         for (int jarj = 1; jarj <= haettu.size(); ++jarj) {
@@ -276,13 +275,16 @@ void TulosForm::valitseSarja()
                 continue;
             }
 
-            foreach (const Rasti& r, s->getRastit())
+            for (int i = 0; i < s->getRastit().size(); ++i) {
+                const Rasti& r = s->getRastit().at(i);
+
                 if (r.sisaltaa(d.m_rasti)) {
                     paino++;
 
-                    if (!rogaining && jarj == r.getNumero())
+                    if (!rogaining && jarj == i + 1)
                         paino++;
                 }
+            }
         }
 
         if (paino > suurin_paino) {
@@ -300,7 +302,7 @@ void TulosForm::updateTila()
         return;
     }
 
-    const Sarja *s = m_tulosDataModel->getSarja();
+    SarjaP s = m_tulosDataModel->getSarja();
 
     if (!s) {
         return;
@@ -326,7 +328,7 @@ void TulosForm::updateTilaLabel()
         return;
     }
 
-    const Sarja *s = m_tulosDataModel->getSarja();
+    SarjaP s = m_tulosDataModel->getSarja();
 
     if (!s) {
         return;
@@ -436,7 +438,7 @@ void TulosForm::on_saveButton_clicked()
 
     QSqlDatabase::database().transaction();
 
-    const Sarja *sarja = getSarja();
+    SarjaP sarja = getSarja();
     QVariant kilpailijaId;
     QVariant sarjaId;
     QVariant tilaId = getTila();
@@ -522,7 +524,7 @@ void TulosForm::on_saveButton_clicked()
         SQL_EXEC(query,);
     }
 
-    query.prepare("INSERT INTO valiaika (tulos, numero, koodi, aika) VALUES (?, ?, ?, ?)");
+    query.prepare("INSERT INTO valiaika (tulos, jarj, rasti, aika) VALUES (?, ?, ?, ?)");
 
     int valiaika_offset = 0;
 
@@ -553,7 +555,7 @@ void TulosForm::on_saveButton_clicked()
     emit tulosTallennettu();
 }
 
-const Sarja *TulosForm::getSarja() const
+SarjaP TulosForm::getSarja() const
 {
     return m_tulosDataModel->getSarja();
 }
@@ -667,7 +669,7 @@ void TulosForm::on_korvaaButton_clicked()
 
 void TulosForm::on_sarjaBox_currentIndexChanged(int index)
 {
-    Sarja * sarja = Sarja::haeSarja(m_tulosDataModel, m_sarjaModel->index(index, 0).data(Qt::EditRole));
+    SarjaP sarja = Sarja::haeSarja(m_sarjaModel->index(index, 0).data(Qt::EditRole));
 
     m_tulosDataModel->setSarja(sarja);
     ui->emitDataView->expandAll();

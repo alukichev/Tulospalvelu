@@ -13,7 +13,7 @@ class EmitDataModel : public QAbstractItemModel
 {
     Q_OBJECT
 public:
-    explicit EmitDataModel(QObject *parent, QString numero = "54321", int vuosi = 12, int kuukausi = 7, QList<RastiData> rastit = QList<RastiData>(), const Sarja* sarja = 0);
+    explicit EmitDataModel(QObject *parent, QString numero = "54321", int vuosi = 12, int kuukausi = 7, QList<RastiData> rastit = QList<RastiData>(), SarjaP sarja = SarjaP{});
 
     Qt::ItemFlags flags(const QModelIndex &index) const;
 
@@ -39,8 +39,8 @@ public:
     QTime getAika() const;
     int getPisteet(void) const;
 
-    void setSarja(const Sarja* sarja);
-    const Sarja* getSarja() const;
+    void setSarja(SarjaP sarja);
+    SarjaP getSarja() const;
 
 protected:
     QString m_numero;
@@ -50,7 +50,7 @@ protected:
     QList<QColor> m_varit;
     int m_pisteet;
 
-    const Sarja *m_sarja;
+    SarjaP m_sarja;
 
 };
 

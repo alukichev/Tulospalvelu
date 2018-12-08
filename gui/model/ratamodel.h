@@ -1,8 +1,8 @@
 #ifndef RATAMODEL_H
 #define RATAMODEL_H
 
-#include <QtWidgets>
 #include <QtSql>
+#include <QtWidgets>
 
 #include "type/tapahtuma.h"
 #include "type/sarja.h"
@@ -14,7 +14,7 @@ class RataModel : public QAbstractItemModel
 {
     Q_OBJECT
 public:
-    explicit RataModel(QObject *parent);
+    explicit RataModel(QObject *parent) : QAbstractItemModel(parent) {}
     explicit RataModel(QObject *parent, const Tapahtuma* tapahtuma);
 
     Qt::ItemFlags flags(const QModelIndex &index) const;
@@ -39,8 +39,7 @@ public slots:
 
 private:
     const Tapahtuma* m_tapahtuma;
-
-    QList<Sarja*> m_sarjat;
+    QList<SarjaP> m_sarjat;
 };
 
 #endif // RATAMODEL_H

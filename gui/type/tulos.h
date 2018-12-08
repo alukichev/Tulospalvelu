@@ -9,22 +9,20 @@
 
 #include "makrot.h"
 
-class Tulos
+struct Tulos
 {
-public:
-    explicit Tulos(int id, const QString& sarja, int sija, const QString &_emit,
-                   const QString& kilpailija, int tila, const QTime& aika, const QDateTime& maaliaika,
-                   const QList<Valiaika>& valiajat, int pisteet = 0);
-
-    static QList<Tulos> haeTulokset(const Sarja* sarja);
-
     enum Tila {
         Avoin = 1,
         Hyvaksytty = 2,
         DNF = 3
     };
 
-//private:
+    static QList<Tulos> haeTulokset(SarjaP sarja);
+
+    explicit Tulos(int id, const QString& sarja, int sija, const QString &_emit,
+                   const QString& kilpailija, int tila, const QTime& aika, const QDateTime& maaliaika,
+                   const QList<Valiaika>& valiajat, int pisteet = 0);
+
     int m_id;               // Tietokanta tunniste?, FIXME miksi ei ole QVariant?
     QString m_sarja;        // Sarjan nimi
     int m_sija;             // Sijoitus

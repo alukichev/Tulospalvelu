@@ -25,7 +25,7 @@ QVariant RastiModel::headerData(int section, Qt::Orientation orientation, int ro
     case 1:
         return _("Järj.nro.");
     case 2:
-        return _("Emitkoodi");
+        return _("Koodi");
     case 3:
         return _("Pisteet");
     }
