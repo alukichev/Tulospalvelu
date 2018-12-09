@@ -1,10 +1,11 @@
 #include "valiaika.h"
 
-Valiaika::Valiaika(const QVariant& iid, int jjarj, int kkoodi, const QTime &aaika, int ssija) :
+Valiaika::Valiaika(const QVariant& iid, int jjarj, int kkoodi, const QTime &aaika, int ppisteet, int ssija) :
     id(iid),
     jarj(jjarj),
     koodi(kkoodi),
     aika(aaika),
+    pisteet(ppisteet),
     sija(ssija)
 {
 }
@@ -21,7 +22,9 @@ QList<Valiaika> Valiaika::haeValiajat(const QVariant &tulosId)
     while (query.next()) {
         QSqlRecord r = query.record();
 
-        valiajat << Valiaika(r.value("id"), r.value("numero").toInt(), r.value("koodi").toInt(), r.value("aika").toTime(), -1);
+        valiajat << Valiaika(r.value("id"), r.value("numero").toInt(),
+                             r.value("rasti").toInt(), r.value("aika").toTime(),
+                             r.value("pisteet").toInt(), -1);
     }
 
     return valiajat;
@@ -29,7 +32,11 @@ QList<Valiaika> Valiaika::haeValiajat(const QVariant &tulosId)
 
 QList<Valiaika> Valiaika::haeRastiValiajat(SarjaP sarja, int jarj)
 {
+    const int tapahtuma = Tapahtuma::tapahtuma()->id();
     QList<Valiaika> valiajat;
+
+    if (tapahtuma == RACE_ROGAINING) // Pistesuunnistuksessa vapaa rastijärjestys kilpailijoille
+        return valiajat;
 
     QSqlQuery query;
     query.prepare(
@@ -44,7 +51,7 @@ QList<Valiaika> Valiaika::haeRastiValiajat(SarjaP sarja, int jarj)
                 "ORDER BY v.aika ASC\n"
     );
 
-    query.addBindValue(Tapahtuma::tapahtuma()->id());
+    query.addBindValue(tapahtuma);
     query.addBindValue(sarja->getId());
     query.addBindValue(jarj);
 
@@ -63,7 +70,9 @@ QList<Valiaika> Valiaika::haeRastiValiajat(SarjaP sarja, int jarj)
             }
         }
 
-        valiajat.append(Valiaika(r.value("id"), r.value("numero").toInt(), r.value("koodi").toInt(), r.value("aika").toTime(), sija));
+        valiajat << Valiaika(r.value("id"), r.value("numero").toInt(),
+                             r.value("koodi").toInt(), r.value("aika").toTime(),
+                             0, sija);
     }
 
     return valiajat;

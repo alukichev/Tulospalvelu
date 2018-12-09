@@ -21,11 +21,12 @@ struct Valiaika
     QVariant id;  // Tietokanta tunniste
     int jarj;     // Rastin järjestysnumero
     int koodi;    // Rastikoodi
-    QTime aika;   // Aika
-    int sija;     // Sijoitus
+    QTime aika;   // Juokseva aika
+    int pisteet;  // Juoksevat pisteet (ROGAINING)
+    int sija;     // Sijoitus (CLASSIC)
 
 private:
-    Valiaika(const QVariant& iid, int jjarj, int kkoodi, const QTime& aaika, int ssija);
+    Valiaika(const QVariant& iid, int jjarj, int kkoodi, const QTime& aaika, int ppisteet, int ssija);
 };
 
 #endif // VALIAIKA_H

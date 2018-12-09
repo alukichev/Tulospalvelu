@@ -11,14 +11,14 @@
 
 #include "makrot.h"
 
-class Data
+struct Data
 {
-public:
-    Data(const QVariant& _a, const QVariant& _b, const QVariant& _c) : a(_a), b(_b), c(_c) {}
+    inline Data(const QVariant& _a, const QVariant& _b, const QVariant& _c, const QVariant& _d = QVariant{}) : a(_a), b(_b), c(_c), d(_d) {}
 
     QVariant a;
     QVariant b;
     QVariant c;
+    QVariant d; // Juoksevat pisteet (ROGAINING)
 };
 
 class TulosDataModel : public EmitDataModel
@@ -35,12 +35,18 @@ public:
 
     void setSarja(SarjaP sarja);
 
+    QTime getAika(bool sakkoton = false) const;
+    int getPisteet(bool sakkoton = false) const;
+    inline int getVirheet(void) const { return m_virheet; }
     QList<Data> getValiajat() const;
 
 private:
     QList<Data> m_data;
     int m_haettu;
     int m_haettuLaite;
+    QTime m_aika;   // Sakkoton aika
+    int m_pisteet;  // Sakottomat pisteet
+    int m_virheet;  // Yhteismäärä sakkoa, sekunteina (CLASSIC) tai pisteinä (ROGAINING)
 };
 
 #endif // TULOSDATAMODEL_H

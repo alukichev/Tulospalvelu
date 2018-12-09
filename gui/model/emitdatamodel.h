@@ -34,11 +34,6 @@ public:
     int getKuukausi() const;
     QList<RastiData> getRastit() const;
 
-    int countVirheet() const;
-
-    QTime getAika() const;
-    int getPisteet(void) const;
-
     void setSarja(SarjaP sarja);
     SarjaP getSarja() const;
 
@@ -48,10 +43,8 @@ protected:
     int m_kuukausi;
     QList<RastiData> m_rastit;
     QList<QColor> m_varit;
-    int m_pisteet;
 
     SarjaP m_sarja;
-
 };
 
 #endif // EMITDATAMODEL_H

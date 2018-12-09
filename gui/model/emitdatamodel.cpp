@@ -6,7 +6,6 @@ EmitDataModel::EmitDataModel(QObject *parent, QString numero, int vuosi, int kuu
     m_vuosi(vuosi),
     m_kuukausi(kuukausi),
     m_rastit(rastit),
-    m_pisteet(0),
     m_sarja(sarja)
 {
     if (m_rastit.empty()) {
@@ -196,8 +195,8 @@ SarjaP EmitDataModel::getSarja() const
 void EmitDataModel::setSarja(SarjaP sarja)
 {
     beginResetModel();
-    m_sarja = sarja;
 
+    m_sarja = sarja;
     m_varit.clear();
 
     if (!m_sarja) {
@@ -207,7 +206,7 @@ void EmitDataModel::setSarja(SarjaP sarja)
         return;
     }
 
-    QList<Rasti> rastit = m_sarja->getRastit();
+    const QList<Rasti> rastit = m_sarja->getRastit();
 
     int rasti_i = 0;
     int virheita = 0;
@@ -252,76 +251,4 @@ void EmitDataModel::setSarja(SarjaP sarja)
     }
 
     endResetModel();
-}
-
-int EmitDataModel::countVirheet() const
-{
-    int virheet = 0;
-
-    if (!m_sarja)
-        return 0;
-
-    if (Tapahtuma::tapahtuma()->tyyppi() == RACE_ROGAINING) {
-        if (m_sarja->isAikaraja()) {
-            const QTime aika = getAika();
-            const int diff_s = m_sarja->getAikaraja().secsTo(aika);
-
-            virheet = diff_s <= 0 ? 0 : (diff_s + 59) / 60; // Joka alkavasta minuutista tulee 1 virhe
-        }
-    }
-    else {
-        foreach (const RastiData& d, m_rastit) {
-            if (d.m_aika <= 5 && d.m_rasti != 0)
-                ++virheet;
-        }
-
-        virheet += m_varit.count(QColor(Qt::red));
-    }
-
-    return virheet;
-}
-
-QTime EmitDataModel::getAika() const
-{
-    int aika = 0;
-    int aika_250 = 0;
-
-    const bool rogaining = Tapahtuma::tapahtuma()->tyyppi() == RACE_ROGAINING;
-
-    foreach (const RastiData& d, m_rastit) {
-        if (d.m_rasti == 0)
-            continue;
-
-        if (d.m_rasti == 250) {
-            aika_250 = d.m_aika;
-            continue;
-        }
-
-        // Pistesuunnistuksessa aika otetaan viimeiseksi kerätystä rastileimasta tai maalileimasta
-        if (m_sarja && (rogaining || m_sarja->getMaalirasti().sisaltaa(d.m_rasti)))
-            aika = d.m_aika;
-    }
-
-    if (aika == 0) {
-        // Valitaan 250 aika
-        aika = aika_250;
-    }
-
-    if (!!m_sarja && !rogaining && m_sarja->isSakko())
-        aika += countVirheet() * m_sarja->getSakko();
-
-    return QTime(0,0).addSecs(aika);
-}
-
-int EmitDataModel::getPisteet(void) const
-{
-    int pisteet = m_pisteet;
-
-    if (!!m_sarja && Tapahtuma::tapahtuma()->tyyppi() == RACE_ROGAINING) {
-        pisteet -= countVirheet();
-        if (pisteet < 0)
-            pisteet = 0;
-    }
-
-    return pisteet;
 }

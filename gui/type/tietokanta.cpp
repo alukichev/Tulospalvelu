@@ -76,9 +76,12 @@ tables
         "   kilpailija INTEGER NOT NULL,"
         "   sarja INTEGER NOT NULL,"
         "   tila INTEGER NOT NULL,"
-        "   aika TIME NOT NULL,"
+        "   aika TIME NOT NULL,"        // Lopullinen (sakot + korjaukset)
         "   maaliaika DATETIME NOT NULL,"
-        "   pisteet INTEGER,"
+        "   pisteet INTEGER,"           // Lopulliset (sakot + korjaukset)
+        "   sakko INTEGER NOT NULL DEFAULT 0," // Sekunteina (CLASSIC) tai pisteinä (ROGAINING)
+        "   korj_aika INTEGER,"         // Yhteismäärä "manuaalisesti" lisättyä/vähennettyä aikaa, sekunteina
+        "   korj_pisteet INTEGER,"      // Yhteismäärä "manuaalisesti" lisättyjä/vähennettyjä pisteitä
         "   poistettu INTEGER NOT NULL DEFAULT 0,"
         "   FOREIGN KEY (tapahtuma) REFERENCES tapahtuma(id)"
         "       ON UPDATE CASCADE"
@@ -100,9 +103,11 @@ tables
         "CREATE TABLE valiaika ("
         "   id INTEGER PRIMARY KEY,"
         "   tulos INTEGER NOT NULL,"
-        "   jarj INTEGER NOT NULL," // Järjestysnumero
-        "   rasti INTEGER NOT NULL," // Rastikoodi eikä id
-        "   aika TIME NOT NULL," // Juokseva aika
+        "   jarj INTEGER NOT NULL,"     // Järjestysnumero
+        "   rasti INTEGER NOT NULL,"    // Rastikoodi eikä id
+        "   aika TIME NOT NULL,"        // Juokseva aika, sakot mukana
+        "   pisteet INTEGER,"           // Juoksevat pisteet (ellei NULL), sakot mukana
+        "   sakko INTEGER,"             // Juokseva, sekunteina (CLASSIC) tai pisteinä (ROGAINING)
         "   FOREIGN KEY (tulos) REFERENCES tulos(id)"
         "       ON UPDATE CASCADE"
         "       ON DELETE CASCADE"
@@ -128,7 +133,7 @@ tables
         "   rasti INTEGER,"
         "   FOREIGN KEY (rasti) REFERENCES rasti(id)"
         "       ON UPDATE CASCADE"
-        "       ON DELETE SET NULL," // Leimasin "vapautuu"
+        "       ON DELETE SET NULL,"    // Leimasin "vapautuu"
         "   FOREIGN KEY (tapahtuma) REFERENCES tapahtuma(id)"
         "       ON UPDATE CASCADE"
         "       ON DELETE CASCADE,"

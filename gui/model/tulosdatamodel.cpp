@@ -72,10 +72,11 @@ void TulosDataModel::setSarja(SarjaP sarja)
 {
     beginResetModel();
     m_sarja = sarja;
-
+    m_aika = QTime();
+    m_pisteet = 0;
+    m_virheet = 0;
     m_varit.clear();
     m_data.clear();
-    m_pisteet = 0;
 
     if (!m_sarja)
         return;
@@ -141,9 +142,9 @@ void TulosDataModel::setSarja(SarjaP sarja)
                 }
             }
 
-            m_data.append(Data(data_i + 1, d.m_rasti, d.m_aika));
-            m_varit.append(QColor(piste_inc ? Qt::darkGreen : Qt::gray));
             m_pisteet += piste_inc;
+            m_data.append(Data(data_i + 1, d.m_rasti, d.m_aika, m_pisteet));
+            m_varit.append(QColor(piste_inc ? Qt::darkGreen : Qt::gray));
 
             ++data_i;
             ++rasti_i;
@@ -245,7 +246,65 @@ void TulosDataModel::setSarja(SarjaP sarja)
         }
     }
 
+    // Laske sakkoton aika
+    int aika = 0, aika_250 = 0;
+    foreach (const RastiData& d, m_rastit) {
+        if (d.m_rasti == 0)
+            continue;
+
+        if (d.m_rasti == 250) {
+            aika_250 = d.m_aika;
+            continue;
+        }
+
+        // Pistesuunnistuksessa aika otetaan viimeiseksi kerätystä rastileimasta tai maalileimasta
+        // FIXME: normaalisuunnistuksessa, jos sarjassa sakot, puuttuva maalirasti aiheuttaa 0
+        // FIXME: pistesuunnistuksessa viimeisen leiman pitää kuulla rataan
+        if (rogaining || m_sarja->getMaalirasti().sisaltaa(d.m_rasti))
+            aika = d.m_aika;
+    }
+
+    if (!aika)
+        aika = aika_250;
+
+    m_aika = QTime(0,0).addSecs(aika);
+
+    // Laske virheet (HUOM.: ajan laskettua)
+    if (!rogaining) {
+        foreach (const RastiData& d, m_rastit) {
+            if (d.m_aika <= 5 && d.m_rasti != 0)
+                ++m_virheet;
+        }
+
+        m_virheet += m_varit.count(QColor(Qt::red));
+    }
+    else if (m_sarja->isAikaraja()) {
+            const int diff_s = m_sarja->getAikaraja().secsTo(m_aika);
+
+            m_virheet = diff_s <= 0 ? 0 : (diff_s + 59) / 60; // Joka alkavasta minuutista tulee 1 virhe
+    }
+
     endResetModel();
+}
+
+QTime TulosDataModel::getAika(bool sakkoton) const
+{
+    const bool rogaining = Tapahtuma::tapahtuma()->tyyppi() == RACE_ROGAINING;
+    return sakkoton || !m_sarja || rogaining ? m_aika : m_aika.addSecs(getVirheet() * m_sarja->getSakko());
+}
+
+int TulosDataModel::getPisteet(bool sakkoton) const
+{
+    const bool rogaining = Tapahtuma::tapahtuma()->tyyppi() == RACE_ROGAINING;
+    int r = m_pisteet;
+
+    if (!sakkoton && rogaining) {
+        r -= getVirheet();
+        if (r < 0)
+            r = 0;
+    }
+
+    return r;
 }
 
 QList<Data> TulosDataModel::getValiajat() const

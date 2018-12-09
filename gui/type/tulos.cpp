@@ -19,7 +19,7 @@ static inline bool sijoita(const Tulos& verta, const QTime& aika, int pisteet)
 
 Tulos::Tulos(int id, const QString &sarja, int sija, const QString &_emit,
              const QString &kilpailija, int tila, const QTime &aika, const QDateTime& maaliaika,
-             const QList<Valiaika>& valiajat, int pisteet) :
+             const QList<Valiaika>& valiajat, int pisteet, int sakko, int kpisteet) :
     m_id(id),
     m_sarja(sarja),
     m_sija(sija),
@@ -29,36 +29,26 @@ Tulos::Tulos(int id, const QString &sarja, int sija, const QString &_emit,
     m_aika(aika),
     m_maaliaika(maaliaika),
     m_pisteet(pisteet),
+    m_sakko(sakko),
+    m_korjPisteet(kpisteet),
     m_valiajat(valiajat)
 {
 }
 
 QList<Tulos> Tulos::haeTulokset(SarjaP sarja)
 {
-
-    QSqlQuery query;
     QString sort = Tapahtuma::tapahtuma()->tyyppi() == RACE_ROGAINING
             ? "t.pisteet DESC, t.aika ASC\n"
             : "t.aika ASC\n";
 
-    query.prepare(
-                QString("SELECT\n"
-                "  t.id,\n"
-                "  t.emit,\n"
-                "  k.nimi AS kilpailija,\n"
-                "  t.tila,\n"
-                "  t.aika,\n"
-                "  t.maaliaika,\n"
-                "  t.pisteet,\n"
-                "  t.tila = 2 AS hyvaksytty\n"
+    QSqlQuery query;
+    query.prepare(_("SELECT t.id, t.emit, k.nimi AS kilpailija,\n"
+                "   t.tila, t.aika, t.maaliaika, t.pisteet,\n"
+                "   t.sakko, t.korj_pisteet, t.tila = 2 AS hyvaksytty\n"
                 "FROM tulos AS t\n"
                 "  JOIN kilpailija AS k ON k.id = t.kilpailija\n"
-                "WHERE t.tapahtuma = ?\n"
-                "  AND t.sarja = ?\n"
-                "  AND NOT t.poistettu\n"
-                "ORDER BY hyvaksytty DESC,\n") + sort
-    );
-
+                "WHERE t.tapahtuma = ? AND t.sarja = ? AND NOT t.poistettu\n"
+                "ORDER BY hyvaksytty DESC,\n") + sort);
     query.addBindValue(Tapahtuma::tapahtuma()->id());
     query.addBindValue(sarja->getId());
 
@@ -78,7 +68,8 @@ QList<Tulos> Tulos::haeTulokset(SarjaP sarja)
         tulokset << Tulos(r.value("id").toInt(), sarja->getNimi(), sija,
                           r.value("emit").toString(), r.value("kilpailija").toString(),
                           tila, aika, r.value("maaliaika").toDateTime(),
-                          Valiaika::haeValiajat(r.value("id")), pisteet);
+                          Valiaika::haeValiajat(r.value("id")), pisteet,
+                          r.value("sakko").toInt(), r.value("korj_pisteet").toInt());
     }
 
     return tulokset;

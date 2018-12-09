@@ -311,7 +311,7 @@ void TulosForm::updateTila()
     // Pistesuunnistuksessa kaikki tulokset hyväksytään
     // Suunnistuksessa tulokset hyväksytään sakon ollessa käytössä
     if (Tapahtuma::tapahtuma()->tyyppi() == RACE_ROGAINING
-            || s->isSakko() || m_tulosDataModel->countVirheet() == 0) {
+            || s->isSakko() || m_tulosDataModel->getVirheet() == 0) {
         ui->tilaBox->setCurrentIndex(1);
 
         return;
@@ -436,24 +436,24 @@ void TulosForm::on_saveButton_clicked()
         return;
     }
 
-    QSqlDatabase::database().transaction();
-
     SarjaP sarja = getSarja();
     QVariant kilpailijaId;
     QVariant sarjaId;
     QVariant tilaId = getTila();
     QTime aika = m_tulosDataModel->getAika();
     int pisteet = m_tulosDataModel->getPisteet();
-    QSqlQuery query;
+    int sakko = m_tulosDataModel->getVirheet();
 
-    if (sarja) {
+    if (sarja)
         sarjaId = sarja->getId();
-    }
 
-    if (sarja && sarja->isYhteislahto()) {
+    if (sarja && sarja->isYhteislahto())
         aika = QTime(0, 0).addSecs(sarja->getYhteislahto().toDateTime().secsTo(m_maaliaika));
-    }
+
     // Tarkistetaan kilpailijan tiedot
+    QSqlDatabase::database().transaction();
+
+    QSqlQuery query;
     query.prepare("SELECT id FROM kilpailija WHERE nimi = ?");
 
     query.addBindValue(ui->kilpailijaEdit->text().trimmed());
@@ -473,21 +473,15 @@ void TulosForm::on_saveButton_clicked()
     }
 
     // Päivitetään emitin kilpailija
-    query.prepare(
-                "UPDATE emit SET\n"
-                "  kilpailija = ?\n"
-                "WHERE id = ?\n"
-                "  AND NOT laina\n"
-    );
-
+    query.prepare("UPDATE emit SET kilpailija = ? WHERE id = ? AND NOT laina");
     query.addBindValue(kilpailijaId);
     query.addBindValue(m_tulosDataModel->getNumero());
-
     SQL_EXEC(query,);
 
     if (m_tulosId.isNull()) {
         // Luodaan tulos
-        query.prepare("INSERT INTO tulos (tapahtuma, emit, kilpailija, sarja, tila, aika, maaliaika, pisteet) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        query.prepare("INSERT INTO tulos (tapahtuma, emit, kilpailija, sarja, tila, aika, maaliaika, pisteet, sakko) "
+                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
         query.addBindValue(Tapahtuma::tapahtuma()->id());
         query.addBindValue(m_tulosDataModel->getNumero());
@@ -497,6 +491,7 @@ void TulosForm::on_saveButton_clicked()
         query.addBindValue(aika);
         query.addBindValue(m_maaliaika);
         query.addBindValue(pisteet);
+        query.addBindValue(sakko);
 
         SQL_EXEC(query,);
 
@@ -504,13 +499,13 @@ void TulosForm::on_saveButton_clicked()
     } else {
         // Tulos oli jo tallennettu => Poistetaan väliajat
         query.prepare("DELETE FROM valiaika WHERE tulos = ?");
-
         query.addBindValue(m_tulosId);
-
         SQL_EXEC(query,);
 
         // Päivitetään tiedot
-        query.prepare("UPDATE tulos SET tapahtuma = ?, emit = ?, kilpailija = ?, sarja = ?, tila = ?, aika = ?, pisteet = ? WHERE id = ?");
+        query.prepare("UPDATE tulos "
+                      "SET tapahtuma = ?, emit = ?, kilpailija = ?, sarja = ?, tila = ?, aika = ?, pisteet = ?, sakko = ? "
+                      "WHERE id = ?");
 
         query.addBindValue(Tapahtuma::tapahtuma()->id());
         query.addBindValue(m_tulosDataModel->getNumero());
@@ -519,24 +514,21 @@ void TulosForm::on_saveButton_clicked()
         query.addBindValue(tilaId);
         query.addBindValue(aika);
         query.addBindValue(pisteet);
+        query.addBindValue(sakko);
         query.addBindValue(m_tulosId);
 
         SQL_EXEC(query,);
     }
 
-    query.prepare("INSERT INTO valiaika (tulos, jarj, rasti, aika) VALUES (?, ?, ?, ?)");
+    const int valiaika_offset = !!sarja && sarja->isYhteislahto() ? aika.secsTo(m_tulosDataModel->getAika()) : 0;
 
-    int valiaika_offset = 0;
-
-    if (sarja && sarja->isYhteislahto()) {
-        valiaika_offset = aika.secsTo(m_tulosDataModel->getAika());
-    }
-
+    query.prepare("INSERT INTO valiaika (tulos, jarj, rasti, aika, pisteet) VALUES (?, ?, ?, ?, ?)");
     foreach (Data d, m_tulosDataModel->getValiajat()) {
         query.addBindValue(m_tulosId);
         query.addBindValue(d.a);
         query.addBindValue(d.b);
         query.addBindValue(QTime(0,0).addSecs(d.c.toInt() - valiaika_offset));
+        query.addBindValue(d.d);
 
         SQL_EXEC(query,);
     }
