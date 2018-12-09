@@ -113,6 +113,40 @@ static QString RastivalitClassic(SarjaP s, const QList<Tulos>& db_tulokset)
     return res;
 }
 
+static QString RastivalitRogaining(SarjaP s, const QList<Tulos>& tulokset)
+{
+    const int width = 10;
+
+    QString r;
+    r.reserve(80 * tulokset.size());
+
+    r += _("<h3>%1  - rastivälit</h3>\n\n<pre>\n").arg(s->getNimi());
+
+    foreach (const Tulos& t, tulokset) {
+        const bool hyv = t.m_tila == Tulos::Hyvaksytty;
+        const QList<Valiaika>& valiajat = t.m_valiajat;
+        QString line1 = _("%1 %2").arg(hyv ? QString::number(t.m_sija) + "." : _(""), 4).arg(t.m_kilpailija, -30);
+        QString line2 = _("%1").arg(' ', 35), line3 = line2, line4 = line2;
+
+        for (int i = 0; i < valiajat.size(); ++i) {
+            const Valiaika& v = valiajat.at(i);
+            const int e_pisteet = !i ? 0 : valiajat.at(i - 1).pisteet;
+            const QTime& e_aika = !i ? QTime(0, 0) : valiajat.at(i - 1).aika;
+            const int aikaero = e_aika.secsTo(v.aika);
+
+            line1 += _(" %1").arg(v.koodi, width);
+            line2 += _(" %1").arg(TimeFormat(v.aika), width);
+            line3 += _(" %1").arg(TimeFormat(QTime(0, 0).addSecs(aikaero)), width);
+            line4 += _(" %1").arg(_("%1(+%2)").arg(v.pisteet).arg(v.pisteet - e_pisteet), width);
+        }
+        r += line1 + "\n" + line2 + "\n" + line3 + "\n" + line4 + "\n\n";
+    }
+
+    r += "</pre>\n\n";
+
+    return r;
+}
+
 static QString TuloslistaClassic(const QList<Tulos>& tulokset)
 {
     QString r;
@@ -382,9 +416,12 @@ void TuloksetForm::updateValiaikaEdit()
     foreach (SarjaP s, m_sarjat) {
         const QList<Tulos>& tulokset = m_tulokset.value(s->getNimi());
 
-        if (!rogaining)
-            m_valiaikaString.append(ValiajatClassic(s, tulokset));
-        m_valiaikaString.append(RastivalitClassic(s, tulokset));
+        if (rogaining)
+            m_valiaikaString += RastivalitRogaining(s, tulokset);
+        else {
+            m_valiaikaString += ValiajatClassic(s, tulokset);
+            m_valiaikaString += RastivalitClassic(s, tulokset);
+        }
     }
 
     edit->append(m_valiaikaString);
