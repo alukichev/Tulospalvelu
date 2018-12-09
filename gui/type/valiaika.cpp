@@ -22,7 +22,7 @@ QList<Valiaika> Valiaika::haeValiajat(const QVariant &tulosId)
     while (query.next()) {
         QSqlRecord r = query.record();
 
-        valiajat << Valiaika(r.value("id"), r.value("numero").toInt(),
+        valiajat << Valiaika(r.value("id"), r.value("jarj").toInt(),
                              r.value("rasti").toInt(), r.value("aika").toTime(),
                              r.value("pisteet").toInt(), -1);
     }
@@ -61,17 +61,16 @@ QList<Valiaika> Valiaika::haeRastiValiajat(SarjaP sarja, int jarj)
     while (query.next())
         res << query.record();
 
-    foreach (QSqlRecord r, res) {
+    foreach (const QSqlRecord& r, res) {
         int sija = 1;
 
-        foreach (QSqlRecord rr, res) {
-            if (rr.value("aika").toTime() < r.value("aika").toTime()) {
-                sija++;
-            }
+        foreach (const QSqlRecord& rr, res) {
+            if (rr.value("aika").toTime() < r.value("aika").toTime())
+                ++sija;
         }
 
-        valiajat << Valiaika(r.value("id"), r.value("numero").toInt(),
-                             r.value("koodi").toInt(), r.value("aika").toTime(),
+        valiajat << Valiaika(r.value("id"), r.value("jarj").toInt(),
+                             r.value("rasti").toInt(), r.value("aika").toTime(),
                              0, sija);
     }
 

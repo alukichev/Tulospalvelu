@@ -1,3 +1,5 @@
+#include <QVector>
+
 #include "tuloksetform.h"
 #include "ui_tuloksetform.h"
 
@@ -161,8 +163,8 @@ void TuloksetForm::updateTulosEdit()
 
         m_tulosString += _("<p>");
 
-        foreach (SarjaP s, m_sarjat) {
-            m_tulosString += _("<a href=\"#%2\">%1</a> ").arg(s->getNimi(), (s->getNimi()).toHtmlEscaped());
+        foreach (SarjaP s2, m_sarjat) {
+            m_tulosString += _("<a href=\"#%2\">%1</a> ").arg(s2->getNimi(), (s2->getNimi()).toHtmlEscaped());
         }
 
         m_tulosString += _("</p>\n");
@@ -189,11 +191,11 @@ void TuloksetForm::updateTulosEdit()
 void TuloksetForm::updateValiaikaEdit()
 {
     QTextEdit *edit = ui->valiaikaEdit;
+    const bool rogaining = Tapahtuma::tapahtuma()->tyyppi() == RACE_ROGAINING;
 
     edit->clear();
 
     m_valiaikaString.clear();
-
     m_valiaikaString += _("<H2>%1</H2>\n").arg(Tapahtuma::tapahtuma()->nimi());
 /*    m_valiaikaString += _("<p>");
 
@@ -204,7 +206,8 @@ void TuloksetForm::updateValiaikaEdit()
     m_valiaikaString += _("</p>\n");
 */
     foreach (SarjaP s, m_sarjat) {
-        m_valiaikaString.append(createValiaika(s));
+        if (!rogaining)
+            m_valiaikaString.append(createValiaika(s));
         m_valiaikaString.append(createRastivali(s));
     }
 
@@ -324,9 +327,7 @@ void TuloksetForm::on_updateButton_clicked()
     QSqlDatabase::database().transaction();
 
     m_tulokset.clear();
-
     m_sarjat = Sarja::haeSarjatRO();
-
     foreach (SarjaP s, m_sarjat)
         m_tulokset.insert(s->getNimi(), Tulos::haeTulokset(s));
 
@@ -402,52 +403,39 @@ void TuloksetForm::on_fileButton_clicked()
 QString TuloksetForm::createValiaika(SarjaP s)
 {
     QString res;
-    QList<Tulos> tulokset = m_tulokset.value(s->getNimi());
+    const QList<Tulos> tulokset = m_tulokset.value(s->getNimi());
+    const int maali_rasti = s->getMaalirasti().getKoodi();
+    const QList<Rasti> rastit = s->getRastit();
 
-    res.append(_("<H3>%1   Tilanne rasteilla\n\n</H3>").arg(s->getNimi()));
+    res += _("<H3>%1   Tilanne rasteilla</H3>\n\n<PRE>\n").arg(s->getNimi());
+    res += _("%1 %2").arg("Sija", -4).arg("Nimi", -30);
 
-    QString tulos = _("%1 %2")
-        .arg("Sija", -4)
-        .arg("Nimi", -30)
-    ;
+    QVector<QList<Valiaika> > valiajat;
+    valiajat.reserve(rastit.size());
 
-    QMap<int, QList<Valiaika> > rastienValiajat;
+    for (int i = 0; i < rastit.size(); ++i) {
+        const Rasti& r = rastit.at(i);
 
-    for (int i = 0; i < s->getRastit().size(); ++i) {
-        const Rasti& r = s->getRastit().at(i);
-
-        if (r.getId() == s->getMaalirasti().getId()) {
+        if (r.getKoodi() == maali_rasti)
             continue;
-        }
 
-        rastienValiajat.insert(r.getId().toInt(), Valiaika::haeRastiValiajat(s, i + 1));
-
-        tulos +=
-            _(" %1")
-            .arg("       " + QString::number(i + 1) + ".", -13)
-        ;
+        valiajat.append(Valiaika::haeRastiValiajat(s, i + 1));
+        res += _(" %1").arg("       " + QString::number(i + 1) + ".", -13);
     }
 
-    tulos +=
-        _(" %1\n\n")
-        .arg("Tulos", -13)
-    ;
+    res += _(" %1\n\n").arg("Tulos", -13);
 
-    foreach (Tulos t, tulokset) {
+    foreach (const Tulos& t, tulokset) {
         QString line = _("%1 %2")
                 .arg((t.m_tila == Tulos::Hyvaksytty ? (QString::number(t.m_sija) + _(".")) : _("")), 4)
-                .arg(t.m_kilpailija, -30)
-        ;
+                .arg(t.m_kilpailija, -30);
 
-        QString aika;
-        aika = TimeFormat(t.m_aika);
+        QString aika = TimeFormat(t.m_aika);
+        for (int i = 0; i < rastit.size(); ++i) {
+            const Rasti& r = rastit.at(i);
 
-        for (int i = 0; i < s->getRastit().size(); ++i) {
-            const Rasti& r = s->getRastit().at(i);
-
-            if (r.getId() == s->getMaalirasti().getId()) {
+            if (r.getKoodi() == maali_rasti)
                 continue;
-            }
 
             Valiaika v;
             bool found = false;
@@ -459,32 +447,25 @@ QString TuloksetForm::createValiaika(SarjaP s)
                 }
             }
 
-            if (found) {
-                foreach (Valiaika tmp_v, rastienValiajat.value(r.getId().toInt())) {
+            if (!found)
+                line += _("         -    ");
+            else {
+                foreach (Valiaika tmp_v, valiajat.at(i)) {
                     if (tmp_v.id == v.id) {
                         v = tmp_v;
                         break;
                     }
                 }
 
-                line += _(" %1%2 ")
-                        .arg(v.sija == -1 ? " " : QString::number(v.sija) + "-", 4)
-                        .arg(TimeFormat(v.aika), -8)
-                ;
-            } else {
-                line += _("         -    ");
+                line += _(" %1%2 ").arg(v.sija == -1 ? " " : QString::number(v.sija) + "-", 4).arg(TimeFormat(v.aika), -8);
             }
         }
 
-        line += _(" %1 %2\n")
-                .arg(aika, -13)
-                .arg(t.m_kilpailija)
-        ;
-
-        tulos += line;
+        line += _(" %1 %2\n").arg(aika, -13).arg(t.m_kilpailija);
+        res += line;
     }
 
-    res.append(_("<PRE>\n%1</PRE>\n\n").arg(tulos));
+    res += "</PRE>\n";
 
     return res;
 }
