@@ -488,7 +488,7 @@ void MainWindow::on_actionVie_kilpailijatietokanta_triggered()
         file.remove();
     }
 
-    Tietokanta::luoKilpailijatietokanta(fn);
+    Tietokanta::vieKilpailijatietokanta(fn);
 }
 
 void MainWindow::on_actionTuo_kilpailijatietokanta_triggered()
@@ -585,7 +585,7 @@ void MainWindow::on_actionVie_tulokset_triggered()
         file.remove();
     }
 
-    Tietokanta::vieTulokset(Tapahtuma::tapahtuma(), fileName);
+    Tietokanta::vieTulokset(*Tapahtuma::tapahtuma(), fileName);
 }
 
 void MainWindow::on_actionTuo_tulokset_triggered()
@@ -598,7 +598,7 @@ void MainWindow::on_actionTuo_tulokset_triggered()
 
     QApplication::setOverrideCursor(Qt::WaitCursor);
 
-    if (Tietokanta::tuoTulokset(Tapahtuma::tapahtuma(), fileName)) {
+    if (Tietokanta::tuoTulokset(*Tapahtuma::tapahtuma(), fileName)) {
         QSqlQuery query;
 
         query.prepare("SELECT COUNT(*) FROM tulos WHERE tapahtuma = ? AND NOT poistettu");

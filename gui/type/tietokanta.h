@@ -20,22 +20,22 @@ public:
 
     static void dropTables();
 
-    static void luoKilpailijatietokanta(const QString& fn);
+    static void vieKilpailijatietokanta(const QString& fn);
     static bool tuoKilpailijatietokanta(const QString& fn);
 
-    static void SQLiteLuoKilpailijatietokanta();
-    static bool SQLiteTuoKilpailijatietokanta();
-
-    static void vieTulokset(const Tapahtuma* tapahtuma, const QString& fileName);
-    static bool tuoTulokset(const Tapahtuma* tapahtuma, const QString& fileName);
-
-    static void SQLiteVieTulokset(const Tapahtuma* tapahtuma);
-    static bool SQLiteTuoTulokset(const Tapahtuma* tapahtuma);
+    static void vieTulokset(const Tapahtuma& tapahtuma, const QString& fileName);
+    static bool tuoTulokset(const Tapahtuma& tapahtuma, const QString& fileName);
 
     static bool checkVersion(const QString& version, const QString& table = QString());
     static QString getVersion(const QString& table = QString());
 
     static void backup(const QString& toTarget  = _("tulospalvelu_bak_%1.sqlite3").arg(QDateTime::currentDateTime().toString("yyyy-MM-ddTHH:mm:ss")));
+
+private:
+    static void SQLiteVieKilpailijatietokanta();
+    static bool SQLiteTuoKilpailijatietokanta();
+    static void SQLiteVieTulokset(int tapahtuma);
+    static bool SQLiteTuoTulokset(const Tapahtuma &tapahtuma);
 };
 
 #endif // TIETOKANTA_H
