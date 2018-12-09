@@ -69,9 +69,6 @@ private:
     void updateValiaikaEdit();
     void updateLehteenEdit();
     void updateXMLEdit();
-
-    QString createValiaika(SarjaP s);
-    QString createRastivali(SarjaP s);
 };
 
 #endif // TULOKSETFORM_H

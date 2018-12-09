@@ -8,6 +8,111 @@ static inline QString TimeFormat(const QTime& time)
     return (time.toString((time.hour() ? _("H.") : _("")) + (time.hour() || time.minute() ? _("mm.") : _("")) + _("ss")));
 }
 
+static QString RastivalitClassic(SarjaP s, const QList<Tulos>& db_tulokset)
+{
+    QList<Tulos> tulokset;
+    tulokset.reserve(db_tulokset.size());
+
+    foreach (Tulos t, db_tulokset) {
+        QTime edellinen;
+
+        QList<Valiaika> valiajat;
+        valiajat.reserve(t.m_valiajat.size());
+
+        foreach (Valiaika v, t.m_valiajat) {
+            QTime aika = v.aika;
+
+            if (!edellinen.isNull())
+                v.aika = QTime(0, 0).addSecs(edellinen.secsTo(v.aika));
+            edellinen = aika;
+
+            valiajat << v;
+        }
+        t.m_valiajat = valiajat;
+
+        tulokset << t;
+    }
+
+    // Kerätään ajat rasteittain
+    const QList<Rasti> rastit = s->getRastit();
+    const int maali_rasti = s->getMaalirasti().getKoodi();
+    QMap<int, QList<QTime> > rastiAjat;
+
+    for (int i = 0; i < rastit.size(); ++i) {
+        QList<QTime> ajat;
+        ajat.reserve(rastit.size());
+
+        foreach (const Tulos& t, tulokset) {
+            if (t.m_tila != Tulos::Hyvaksytty)
+                continue;
+
+            foreach (const Valiaika& v, t.m_valiajat) {
+                if (v.jarj == i + 1) {
+                    ajat << v.aika;
+                    break;
+                }
+            }
+        }
+
+        rastiAjat.insert(i + 1, ajat);
+    }
+
+    QString res = _("<H3>%1   Rastivälien ajat</H3>\n\n<PRE>\n").arg(s->getNimi());
+
+    res += _("%1 %2").arg("Sija", -4).arg("Nimi", -30);
+    for (int i = 0; i < rastit.size(); ++i) {
+        const Rasti& r = rastit.at(i);
+
+        if (r.getKoodi() == maali_rasti)
+            res += _(" %1").arg("    " + QString::number(i) + "-M ", -13);
+        else
+            res += _(" %1").arg("    " + QString::number(i) + "-" + QString::number(i + 1) + " ", -13);
+    }
+
+    res += _(" %1\n\n").arg("Tulos", -13);
+
+    foreach (const Tulos& t, tulokset) {
+        QString aika = TimeFormat(t.m_aika);
+        QString line = _("%1 %2")
+                .arg((t.m_tila == Tulos::Hyvaksytty ? (QString::number(t.m_sija) + _(".")) : _("")), 4)
+                .arg(t.m_kilpailija, -30);
+
+        for (int i = 0; i < rastit.size(); ++i) {
+            Valiaika v;
+            bool found = false;
+
+            foreach (v, t.m_valiajat) {
+                if (i + 1 == v.jarj) {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found)
+                line += "         -    ";
+            else {
+                if (t.m_tila == Tulos::Hyvaksytty) {
+                    v.sija = 1;
+
+                    foreach (const QTime& t, rastiAjat.value(v.jarj)) {
+                        if (t < v.aika)
+                            ++v.sija;
+                    }
+                }
+
+                line += _(" %1%2 ").arg(v.sija == -1 ? " " : QString::number(v.sija) + "-", 4).arg(TimeFormat(v.aika), -8);
+            }
+        }
+
+        line += _(" %1 %2\n").arg(aika, -13).arg(t.m_kilpailija);
+        res += line;
+    }
+
+    res += "</PRE>\n\n";
+
+    return res;
+}
+
 static QString TuloslistaClassic(const QList<Tulos>& tulokset)
 {
     QString r;
@@ -76,6 +181,75 @@ static QString TuloslistaRogaining(const QList<Tulos>& tulokset)
     }
 
     return r;
+}
+
+static QString ValiajatClassic(SarjaP s, const QList<Tulos>& tulokset)
+{
+    QString res;
+    const int maali_rasti = s->getMaalirasti().getKoodi();
+    const QList<Rasti> rastit = s->getRastit();
+
+    res += _("<H3>%1   Tilanne rasteilla</H3>\n\n<PRE>\n").arg(s->getNimi());
+    res += _("%1 %2").arg("Sija", -4).arg("Nimi", -30);
+
+    QVector<QList<Valiaika> > valiajat;
+    valiajat.reserve(rastit.size());
+
+    for (int i = 0; i < rastit.size(); ++i) {
+        const Rasti& r = rastit.at(i);
+
+        if (r.getKoodi() == maali_rasti)
+            continue;
+
+        valiajat.append(Valiaika::haeRastiValiajat(s, i + 1));
+        res += _(" %1").arg("       " + QString::number(i + 1) + ".", -13);
+    }
+
+    res += _(" %1\n\n").arg("Tulos", -13);
+
+    foreach (const Tulos& t, tulokset) {
+        QString line = _("%1 %2")
+                .arg((t.m_tila == Tulos::Hyvaksytty ? (QString::number(t.m_sija) + _(".")) : _("")), 4)
+                .arg(t.m_kilpailija, -30);
+
+        QString aika = TimeFormat(t.m_aika);
+        for (int i = 0; i < rastit.size(); ++i) {
+            const Rasti& r = rastit.at(i);
+
+            if (r.getKoodi() == maali_rasti)
+                continue;
+
+            Valiaika v;
+            bool found = false;
+
+            foreach (v, t.m_valiajat) {
+                if (i + 1 == v.jarj) {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found)
+                line += _("         -    ");
+            else {
+                foreach (Valiaika tmp_v, valiajat.at(i)) {
+                    if (tmp_v.id == v.id) {
+                        v = tmp_v;
+                        break;
+                    }
+                }
+
+                line += _(" %1%2 ").arg(v.sija == -1 ? " " : QString::number(v.sija) + "-", 4).arg(TimeFormat(v.aika), -8);
+            }
+        }
+
+        line += _(" %1 %2\n").arg(aika, -13).arg(t.m_kilpailija);
+        res += line;
+    }
+
+    res += "</PRE>\n";
+
+    return res;
 }
 
 TuloksetForm::TuloksetForm(QWidget *parent) :
@@ -206,9 +380,11 @@ void TuloksetForm::updateValiaikaEdit()
     m_valiaikaString += _("</p>\n");
 */
     foreach (SarjaP s, m_sarjat) {
+        const QList<Tulos>& tulokset = m_tulokset.value(s->getNimi());
+
         if (!rogaining)
-            m_valiaikaString.append(createValiaika(s));
-        m_valiaikaString.append(createRastivali(s));
+            m_valiaikaString.append(ValiajatClassic(s, tulokset));
+        m_valiaikaString.append(RastivalitClassic(s, tulokset));
     }
 
     edit->append(m_valiaikaString);
@@ -398,209 +574,6 @@ void TuloksetForm::on_fileButton_clicked()
     }
 
     file.close();
-}
-
-QString TuloksetForm::createValiaika(SarjaP s)
-{
-    QString res;
-    const QList<Tulos> tulokset = m_tulokset.value(s->getNimi());
-    const int maali_rasti = s->getMaalirasti().getKoodi();
-    const QList<Rasti> rastit = s->getRastit();
-
-    res += _("<H3>%1   Tilanne rasteilla</H3>\n\n<PRE>\n").arg(s->getNimi());
-    res += _("%1 %2").arg("Sija", -4).arg("Nimi", -30);
-
-    QVector<QList<Valiaika> > valiajat;
-    valiajat.reserve(rastit.size());
-
-    for (int i = 0; i < rastit.size(); ++i) {
-        const Rasti& r = rastit.at(i);
-
-        if (r.getKoodi() == maali_rasti)
-            continue;
-
-        valiajat.append(Valiaika::haeRastiValiajat(s, i + 1));
-        res += _(" %1").arg("       " + QString::number(i + 1) + ".", -13);
-    }
-
-    res += _(" %1\n\n").arg("Tulos", -13);
-
-    foreach (const Tulos& t, tulokset) {
-        QString line = _("%1 %2")
-                .arg((t.m_tila == Tulos::Hyvaksytty ? (QString::number(t.m_sija) + _(".")) : _("")), 4)
-                .arg(t.m_kilpailija, -30);
-
-        QString aika = TimeFormat(t.m_aika);
-        for (int i = 0; i < rastit.size(); ++i) {
-            const Rasti& r = rastit.at(i);
-
-            if (r.getKoodi() == maali_rasti)
-                continue;
-
-            Valiaika v;
-            bool found = false;
-
-            foreach (v, t.m_valiajat) {
-                if (i + 1 == v.jarj) {
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!found)
-                line += _("         -    ");
-            else {
-                foreach (Valiaika tmp_v, valiajat.at(i)) {
-                    if (tmp_v.id == v.id) {
-                        v = tmp_v;
-                        break;
-                    }
-                }
-
-                line += _(" %1%2 ").arg(v.sija == -1 ? " " : QString::number(v.sija) + "-", 4).arg(TimeFormat(v.aika), -8);
-            }
-        }
-
-        line += _(" %1 %2\n").arg(aika, -13).arg(t.m_kilpailija);
-        res += line;
-    }
-
-    res += "</PRE>\n";
-
-    return res;
-}
-
-QString TuloksetForm::createRastivali(SarjaP s)
-{
-    QString res;
-
-    QList<Tulos> tulokset;
-    QMap< int, QList<QTime> > rastiAjat;
-
-    foreach (Tulos t, m_tulokset.value(s->getNimi())) {
-        QTime edellinen;
-
-        QList<Valiaika> valiajat;
-
-        //foreach (Valiaika v, Valiaika::karsiYlimaaraiset(t.m_valiajat, s->getRastit())) {
-        foreach (Valiaika v, t.m_valiajat) {
-            QTime tulos = v.aika;
-
-            if (!edellinen.isNull()) {
-                v.aika = QTime(0, 0).addSecs(edellinen.secsTo(v.aika));
-            }
-
-            valiajat.append(v);
-            edellinen = tulos;
-        }
-
-        t.m_valiajat = valiajat;
-        tulokset.append(t);
-    }
-
-    // Kerätään ajat rasteittain
-    for (int i = 0; i < s->getRastit().size(); ++i) {
-        QList<QTime> ajat;
-
-        foreach (Tulos t, tulokset) {
-            if (t.m_tila != Tulos::Hyvaksytty) {
-                continue;
-            }
-
-            foreach (Valiaika v, t.m_valiajat) {
-                if (v.jarj == i + 1) {
-                    ajat.append(v.aika);
-                    break;
-                }
-            }
-        }
-
-        rastiAjat.insert(i + 1, ajat);
-    }
-
-    res.append(_("<H3>%1   Rastivälien ajat\n\n</H3>").arg(s->getNimi()));
-
-    QString tulos = _("%1 %2")
-        .arg("Sija", -4)
-        .arg("Nimi", -30)
-    ;
-
-    for (int i = 0; i < s->getRastit().size(); ++i) {
-        const Rasti& r = s->getRastit().at(i);
-
-        if (r.getId() == s->getMaalirasti().getId()) {
-            tulos +=
-                _(" %1")
-                .arg("    " + QString::number(i) + "-M ", -13)
-            ;
-        } else {
-            tulos +=
-                _(" %1")
-                .arg("    " + QString::number(i) + "-" + QString::number(i + 1) + " ", -13)
-            ;
-        }
-    }
-
-    tulos +=
-        _(" %1\n\n")
-        .arg("Tulos", -13)
-    ;
-
-    foreach (Tulos t, tulokset) {
-        QString line = _("%1 %2")
-                .arg((t.m_tila == Tulos::Hyvaksytty ? (QString::number(t.m_sija) + _(".")) : _("")), 4)
-                .arg(t.m_kilpailija, -30)
-        ;
-
-        QString aika;
-        aika = TimeFormat(t.m_aika);
-
-
-        for (int i = 0; i < s->getRastit().size(); ++i) {
-            Valiaika v;
-            bool found = false;
-
-            foreach (v, t.m_valiajat) {
-                if (i + 1 == v.jarj) {
-                    found = true;
-                    break;
-                }
-            }
-
-            if (found) {
-                if (t.m_tila == Tulos::Hyvaksytty) {
-                    v.sija = 1;
-
-                    foreach (QTime t, rastiAjat.value(v.jarj)) {
-                        if (t < v.aika) {
-                            v.sija++;
-                            //continue;
-                        }
-                    }
-
-                }
-
-                line += _(" %1%2 ")
-                        .arg(v.sija == -1 ? " " : QString::number(v.sija) + "-", 4)
-                        .arg(TimeFormat(v.aika), -8)
-                ;
-            } else {
-                line += _("         -    ");
-            }
-        }
-
-
-        line += _(" %1 %2\n")
-                .arg(aika, -13)
-                .arg(t.m_kilpailija)
-        ;
-
-        tulos += line;
-    }
-
-    res.append(_("<PRE>\n%1</PRE>\n\n").arg(tulos));
-
-    return res;
 }
 
 void TuloksetForm::on_tulosAvaaButton_clicked()
