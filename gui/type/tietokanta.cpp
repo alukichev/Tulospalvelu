@@ -486,6 +486,7 @@ bool Tietokanta::SQLiteTuoTulokset(const Tapahtuma& tapahtuma)
 
     if (!query.next() || query.value(0).toInt() != 1) {
         INFO(0, _("Tulostietokanta ei sisällä vain yksiä tuloksia. Ei voida tuoda tuloksia."));
+        QSqlDatabase::database().rollback();
         return false;
     }
 
@@ -497,6 +498,7 @@ bool Tietokanta::SQLiteTuoTulokset(const Tapahtuma& tapahtuma)
     if (!query.next() || query.value(0).toInt() != 1) {
         // FIXME katso edellinen FIXME
         INFO(0, _("Tulostietokanta ei sisällä tätä tapahtumaa (%2).").arg(tapahtuma.nimi()));
+        QSqlDatabase::database().rollback();
         return false;
     }
 
@@ -507,6 +509,7 @@ bool Tietokanta::SQLiteTuoTulokset(const Tapahtuma& tapahtuma)
 
     if (!query.next() || query.value(0).toInt() != 0) {
         INFO(0, _("Tapahtumaa ei löydy tästä tulostietokannasta."));
+        QSqlDatabase::database().rollback();
         return false;
     }
 
