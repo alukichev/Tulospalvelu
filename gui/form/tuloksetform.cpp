@@ -124,17 +124,29 @@ static QString RastivalitRogaining(SarjaP s, const QList<Tulos>& tulokset)
 
     foreach (const Tulos& t, tulokset) {
         const bool hyv = t.m_tila == Tulos::Hyvaksytty;
-        const QList<Valiaika>& valiajat = t.m_valiajat;
+        QList<Valiaika> valiajat = t.m_valiajat;
         QString line1 = _("%1 %2").arg(hyv ? QString::number(t.m_sija) + "." : _(""), 4).arg(t.m_kilpailija, -30);
         QString line2 = _("%1").arg(' ', 35), line3 = line2, line4 = line2;
 
+        // Mikäli tuloksen on "manuaalisesti" korjattu, lisää virtuaaliväliaika, josta se selviää
+        if (t.m_korjPisteet && !valiajat.isEmpty()) {
+            Valiaika vv = valiajat.last();
+
+            vv.koodi = -1;
+            vv.pisteet += t.m_korjPisteet;
+
+            valiajat << vv;
+        }
+
+        // Tulosta väliajat
         for (int i = 0; i < valiajat.size(); ++i) {
             const Valiaika& v = valiajat.at(i);
             const int e_pisteet = !i ? 0 : valiajat.at(i - 1).pisteet;
             const QTime& e_aika = !i ? QTime(0, 0) : valiajat.at(i - 1).aika;
             const int aikaero = e_aika.secsTo(v.aika);
+            const QString koodi = v.koodi == -1 ? QString("KORJ") : QString::number(v.koodi);
 
-            line1 += _(" %1").arg(v.koodi, width);
+            line1 += _(" %1").arg(koodi, width);
             line2 += _(" %1").arg(TimeFormat(v.aika), width);
             line3 += _(" %1").arg(TimeFormat(QTime(0, 0).addSecs(aikaero)), width);
             line4 += _(" %1").arg(_("%1(+%2)").arg(v.pisteet).arg(v.pisteet - e_pisteet), width);

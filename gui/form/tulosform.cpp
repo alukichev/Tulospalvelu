@@ -159,6 +159,7 @@ void TulosForm::setupForm(const QVariant &tulosId)
                 "  t.sarja,\n"
                 "  t.tila,\n"
                 "  t.aika,\n"
+                "  t.korj_pisteet,\n"
                 "  k.nimi AS kilpailija,\n"
                 "  t.maaliaika\n"
                 "FROM tulos AS t\n"
@@ -201,6 +202,7 @@ void TulosForm::setupForm(const QVariant &tulosId)
     naytaTulos();
 
     ui->kilpailijaEdit->setText(r.value("kilpailija").toString());
+    ui->pkorjEdit->setText(QString::number(r.value("korj_pisteet").toInt()));
 
     for (int i = 0; i < m_sarjaModel->rowCount(); i++) {
         if (r.value("sarja") == m_sarjaModel->index(i, 0).data(Qt::EditRole)) {
@@ -443,9 +445,13 @@ void TulosForm::on_saveButton_clicked()
     QTime aika = m_tulosDataModel->getAika();
     int pisteet = m_tulosDataModel->getPisteet();
     int sakko = m_tulosDataModel->getVirheet();
+    int pkorj = ui->pkorjEdit->text().toInt();
 
     if (sarja)
         sarjaId = sarja->getId();
+
+    if (pkorj)
+        pisteet += pkorj;
 
     if (sarja && sarja->isYhteislahto())
         aika = QTime(0, 0).addSecs(sarja->getYhteislahto().toDateTime().secsTo(m_maaliaika));
@@ -480,8 +486,8 @@ void TulosForm::on_saveButton_clicked()
 
     if (m_tulosId.isNull()) {
         // Luodaan tulos
-        query.prepare("INSERT INTO tulos (tapahtuma, emit, kilpailija, sarja, tila, aika, maaliaika, pisteet, sakko) "
-                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        query.prepare("INSERT INTO tulos (tapahtuma, emit, kilpailija, sarja, tila, aika, maaliaika, pisteet, sakko, korj_pisteet) "
+                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
         query.addBindValue(Tapahtuma::tapahtuma()->id());
         query.addBindValue(m_tulosDataModel->getNumero());
@@ -492,6 +498,7 @@ void TulosForm::on_saveButton_clicked()
         query.addBindValue(m_maaliaika);
         query.addBindValue(pisteet);
         query.addBindValue(sakko);
+        query.addBindValue(pkorj);
 
         SQL_EXEC(query,);
 
@@ -504,7 +511,7 @@ void TulosForm::on_saveButton_clicked()
 
         // Päivitetään tiedot
         query.prepare("UPDATE tulos "
-                      "SET tapahtuma = ?, emit = ?, kilpailija = ?, sarja = ?, tila = ?, aika = ?, pisteet = ?, sakko = ? "
+                      "SET tapahtuma = ?, emit = ?, kilpailija = ?, sarja = ?, tila = ?, aika = ?, pisteet = ?, sakko = ?, korj_pisteet = ? "
                       "WHERE id = ?");
 
         query.addBindValue(Tapahtuma::tapahtuma()->id());
@@ -515,6 +522,7 @@ void TulosForm::on_saveButton_clicked()
         query.addBindValue(aika);
         query.addBindValue(pisteet);
         query.addBindValue(sakko);
+        query.addBindValue(pkorj);
         query.addBindValue(m_tulosId);
 
         SQL_EXEC(query,);
@@ -793,9 +801,14 @@ void TulosForm::checkFocus()
 
 void TulosForm::on_kilpailijaEdit_returnPressed()
 {
-    if (ui->saveButton->isEnabled()) {
+    if (ui->saveButton->isEnabled())
         ui->saveButton->click();
-    }
+}
+
+void TulosForm::on_pkorjEdit_returnPressed()
+{
+    if (ui->saveButton->isEnabled())
+        ui->saveButton->click();
 }
 
 void TulosForm::on_aikaTimeEdit_timeChanged(const QTime &date)
@@ -805,6 +818,12 @@ void TulosForm::on_aikaTimeEdit_timeChanged(const QTime &date)
 }
 
 void TulosForm::on_pisteetEdit_textEdited(const QString& text)
+{
+    Q_UNUSED(text);
+    setAllSaved(false);
+}
+
+void TulosForm::on_pkorjEdit_textEdited(const QString& text)
 {
     Q_UNUSED(text);
     setAllSaved(false);

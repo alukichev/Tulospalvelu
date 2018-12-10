@@ -5,7 +5,8 @@
 TulosDataModel::TulosDataModel(QObject *parent, QString numero, int vuosi, int kuukausi, QList<RastiData> rastit, SarjaP sarja) :
     EmitDataModel(parent, numero, vuosi, kuukausi, rastit, SarjaP{}),
     m_haettu(0),
-    m_haettuLaite(0)
+    m_haettuLaite(0),
+    m_aika(), m_pisteet(0), m_virheet(0)
 {
     foreach (RastiData d, m_rastit) {
         if (d.m_rasti == 250 || d.m_rasti == 254 || d.m_rasti == 99) {
