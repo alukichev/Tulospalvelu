@@ -9,10 +9,8 @@
 
 #include "makrot.h"
 
-class Tietokanta
+struct Tietokanta
 {
-public:
-
     static void buildSQLite();
     static void buildMySQL();
 
