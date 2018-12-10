@@ -1,6 +1,16 @@
 #include "tulosform.h"
 #include "ui_tulosform.h"
 
+static inline void hideItems(QLayout *layout)
+{
+    for (int i = 0; i < layout->count(); ++i) {
+        QLayoutItem *item = layout->itemAt(i);
+
+        if (item->widget())
+            item->widget()->hide();
+    }
+}
+
 TulosForm::TulosForm(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::TulosForm),
@@ -33,6 +43,11 @@ TulosForm::TulosForm(QWidget *parent) :
 
     ui->sarjaBox->installEventFilter(this);
     ui->tilaBox->installEventFilter(this);
+
+    if (Tapahtuma::tapahtuma()->tyyppi() != RACE_ROGAINING) {
+        hideItems(ui->pisteLayout);
+        hideItems(ui->pkorjLayout);
+    }
 
     setupShortcuts();
 }
@@ -121,9 +136,8 @@ void TulosForm::setupForm(const QDateTime& lukuaika, const QString &numero, int 
     m_maaliaika = m_maaliaika.addSecs(maali_aikaleima - lukija_aikaleima);
 
     // Näytettävä tulos laskettava uudestaan.
-    if (sarja && sarja->isYhteislahto()) {
+    if (sarja && sarja->isYhteislahto())
         ui->aikaTimeEdit->setTime(QTime(0, 0).addSecs(sarja->getYhteislahto().toDateTime().secsTo(m_maaliaika)));
-    }
 
     QSqlDatabase::database().commit();
 
