@@ -545,7 +545,7 @@ void TulosForm::on_saveButton_clicked()
     const int valiaika_offset = !!sarja && sarja->isYhteislahto() ? aika.secsTo(m_tulosDataModel->getAika()) : 0;
 
     query.prepare("INSERT INTO valiaika (tulos, jarj, rasti, aika, pisteet) VALUES (?, ?, ?, ?, ?)");
-    foreach (Data d, m_tulosDataModel->getValiajat()) {
+    foreach (const TulosDataModel::Data& d, m_tulosDataModel->getValiajat()) {
         query.addBindValue(m_tulosId);
         query.addBindValue(d.a);
         query.addBindValue(d.b);

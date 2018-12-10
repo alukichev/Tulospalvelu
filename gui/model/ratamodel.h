@@ -33,9 +33,6 @@ public:
 
     bool insertRow(int row, const QModelIndex &parent);
     bool removeRow(int row, const QModelIndex &parent);
-signals:
-
-public slots:
 
 private:
     const Tapahtuma* m_tapahtuma;

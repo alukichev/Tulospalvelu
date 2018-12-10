@@ -11,20 +11,21 @@
 
 #include "makrot.h"
 
-struct Data
-{
-    inline Data(const QVariant& _a, const QVariant& _b, const QVariant& _c, const QVariant& _d = QVariant{}) : a(_a), b(_b), c(_c), d(_d) {}
-
-    QVariant a;
-    QVariant b;
-    QVariant c;
-    QVariant d; // Juoksevat pisteet (ROGAINING)
-};
-
 class TulosDataModel : public EmitDataModel
 {
     Q_OBJECT
+
 public:
+    struct Data
+    {
+        inline Data(const QVariant& _a, const QVariant& _b, const QVariant& _c, const QVariant& _d = QVariant{}) : a(_a), b(_b), c(_c), d(_d) {}
+
+        QVariant a;
+        QVariant b;
+        QVariant c;
+        QVariant d; // Juoksevat pisteet (ROGAINING)
+    };
+
     explicit TulosDataModel(QObject *parent, QString numero, int vuosi, int kuukausi, QList<RastiData> rastit, SarjaP sarja = SarjaP{});
 
     virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;

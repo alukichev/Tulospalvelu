@@ -21,17 +21,14 @@ TulosDataModel::TulosDataModel(QObject *parent, QString numero, int vuosi, int k
 
 QVariant TulosDataModel::data(const QModelIndex &index, int role) const
 {
-    if (!m_sarja) {
+    if (!m_sarja)
         return QVariant();
-    }
 
-    if (role == Qt::ForegroundRole || static_cast<int>(index.internalId()) <= -1) {
+    if (role == Qt::ForegroundRole || static_cast<int>(index.internalId()) <= -1)
         return EmitDataModel::data(index, role);
-    }
 
-    if (role != Qt::DisplayRole && role != Qt::EditRole) {
+    if (role != Qt::DisplayRole && role != Qt::EditRole)
         return QVariant();
-    }
 
     Data d = m_data.at(index.row());
 
@@ -72,6 +69,7 @@ int TulosDataModel::rowCount(const QModelIndex &parent) const
 void TulosDataModel::setSarja(SarjaP sarja)
 {
     beginResetModel();
+
     m_sarja = sarja;
     m_aika = QTime();
     m_pisteet = 0;
@@ -308,7 +306,7 @@ int TulosDataModel::getPisteet(bool sakkoton) const
     return r;
 }
 
-QList<Data> TulosDataModel::getValiajat() const
+QList<TulosDataModel::Data> TulosDataModel::getValiajat() const
 {
     QList<Data> valiajat;
 
