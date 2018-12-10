@@ -142,14 +142,16 @@ static QString RastivalitRogaining(SarjaP s, const QList<Tulos>& tulokset)
         for (int i = 0; i < valiajat.size(); ++i) {
             const Valiaika& v = valiajat.at(i);
             const int e_pisteet = !i ? 0 : valiajat.at(i - 1).pisteet;
+            const int pisteero = v.pisteet - e_pisteet;
             const QTime& e_aika = !i ? QTime(0, 0) : valiajat.at(i - 1).aika;
             const int aikaero = e_aika.secsTo(v.aika);
             const QString koodi = v.koodi == -1 ? QString("KORJ") : QString::number(v.koodi);
+            const char *eromerkki = pisteero < 0 ? "" : "+";
 
             line1 += _(" %1").arg(koodi, width);
             line2 += _(" %1").arg(TimeFormat(v.aika), width);
             line3 += _(" %1").arg(TimeFormat(QTime(0, 0).addSecs(aikaero)), width);
-            line4 += _(" %1").arg(_("%1(+%2)").arg(v.pisteet).arg(v.pisteet - e_pisteet), width);
+            line4 += _(" %1").arg(_("%1(%2%3)").arg(v.pisteet).arg(eromerkki).arg(pisteero), width);
         }
         r += line1 + "\n" + line2 + "\n" + line3 + "\n" + line4 + "\n\n";
     }
