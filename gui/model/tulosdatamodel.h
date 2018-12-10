@@ -7,7 +7,7 @@
 
 #include "type/sarja.h"
 #include "type/rasti.h"
-#include "type/rastidata.h"
+#include "type/emitleima.h"
 
 #include "makrot.h"
 
@@ -26,7 +26,7 @@ public:
         QVariant d; // Juoksevat pisteet (ROGAINING)
     };
 
-    explicit TulosDataModel(QObject *parent, QString numero, int vuosi, int kuukausi, QList<RastiData> rastit, SarjaP sarja = SarjaP{});
+    explicit TulosDataModel(QObject *parent, QString numero, int vuosi, int kuukausi, QList<EmitLeima> leimat, SarjaP sarja = SarjaP{});
 
     virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
 

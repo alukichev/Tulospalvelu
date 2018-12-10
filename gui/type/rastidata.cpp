@@ -1,27 +1,18 @@
-#include "rastidata.h"
+#include "emitleima.h"
 
-RastiData::RastiData(int rasti, int aika) :
-    m_rasti(rasti),
-    m_aika(aika)
+QList<EmitLeima> EmitLeima::haeLeimat(const QVariant &luettu_emit_id)
 {
-}
-
-QList<RastiData> RastiData::luettuRasit(const QVariant &luettuEmitId)
-{
-    QList<RastiData> rastit;
+    QList<EmitLeima> rastit;
 
     QSqlQuery query;
-
     query.prepare("SELECT * FROM luettu_emit_rasti WHERE luettu_emit = ? ORDER BY numero ASC");
-
-    query.addBindValue(luettuEmitId);
-
+    query.addBindValue(luettu_emit_id);
     SQL_EXEC(query, rastit);
 
     while (query.next()) {
         QSqlRecord r = query.record();
 
-        rastit.append(RastiData(r.value("koodi").toInt(), r.value("aika").toInt()));
+        rastit.append(EmitLeima(r.value("koodi").toInt(), r.value("aika").toInt()));
     }
 
     return rastit;

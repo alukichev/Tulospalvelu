@@ -2,16 +2,16 @@
 
 #include "tulosdatamodel.h"
 
-TulosDataModel::TulosDataModel(QObject *parent, QString numero, int vuosi, int kuukausi, QList<RastiData> rastit, SarjaP sarja) :
-    EmitDataModel(parent, numero, vuosi, kuukausi, rastit, SarjaP{}),
+TulosDataModel::TulosDataModel(QObject *parent, QString numero, int vuosi, int kuukausi, QList<EmitLeima> leimat, SarjaP sarja) :
+    EmitDataModel(parent, numero, vuosi, kuukausi, leimat, SarjaP{}),
     m_haettu(0),
     m_haettuLaite(0),
     m_aika(), m_pisteet(0), m_virheet(0)
 {
-    foreach (RastiData d, m_rastit) {
-        if (d.m_rasti == 250 || d.m_rasti == 254 || d.m_rasti == 99) {
+    foreach (const EmitLeima& d, m_leimat) {
+        if (d.m_koodi == 250 || d.m_koodi == 254 || d.m_koodi == 99) {
             m_haettuLaite++;
-        } else if (d.m_rasti != 0) {
+        } else if (d.m_koodi != 0) {
             m_haettu++;
         }
     }
@@ -89,14 +89,14 @@ void TulosDataModel::setSarja(SarjaP sarja)
     QSet<int> haetut_rastit;
     haetut_rastit.reserve(rastit.size());
 
-    while (data_i < m_rastit.count() || rasti_i < rastit.count()) {
-        RastiData d(-1, -1);
+    while (data_i < m_leimat.count() || rasti_i < rastit.count()) {
+        EmitLeima d(-1, -1);
 
-        if (data_i < m_rastit.count())
-           d = m_rastit.at(data_i);
+        if (data_i < m_leimat.count())
+           d = m_leimat.at(data_i);
 
         // ohitetaan 0 koodilla olevat rastit
-        if (d.m_rasti == 0) {
+        if (d.m_koodi == 0) {
             data_i++;
             continue;
         }
@@ -106,7 +106,7 @@ void TulosDataModel::setSarja(SarjaP sarja)
             r = rastit.at(rasti_i);
 
         // Luetut rastit loppuivat
-        if (d.m_rasti == -1 && d.m_aika == -1) {
+        if (d.m_koodi == -1 && d.m_aika == -1) {
             if (!rogaining && rasti_i < rastit.count()) {
                 m_data.append(Data(rasti_i + 1, _("-"), _("rasti puuttuu")));
                 m_varit.append(QColor(Qt::red));
@@ -117,8 +117,8 @@ void TulosDataModel::setSarja(SarjaP sarja)
 
         // Lukulaitteiden koodit ja 99 koodi
         // Käsitellään seuraava RastiData ja Rasti ei liiku
-        if (d.m_rasti == 250 || d.m_rasti == 254 || d.m_rasti == 99) {
-            m_data.append(Data(_("*"), d.m_rasti, d.m_aika));
+        if (d.m_koodi == 250 || d.m_koodi == 254 || d.m_koodi == 99) {
+            m_data.append(Data(_("*"), d.m_koodi, d.m_aika));
             m_varit.append(QColor(Qt::blue));
             data_i++;
             continue;
@@ -130,7 +130,7 @@ void TulosDataModel::setSarja(SarjaP sarja)
             for (int num = 1; num <= rastit.size(); ++num) {
                 const Rasti& rr = rastit.at(num - 1);
 
-                if (rr.sisaltaa(d.m_rasti)) {
+                if (rr.sisaltaa(d.m_koodi)) {
                     // Tunnetuista rasteista saadaan pisteet vain kerran
                     if (!haetut_rastit.contains(num)) {
                         piste_inc = rr.getPisteet();
@@ -142,7 +142,7 @@ void TulosDataModel::setSarja(SarjaP sarja)
             }
 
             m_pisteet += piste_inc;
-            m_data.append(Data(data_i + 1, d.m_rasti, d.m_aika, m_pisteet));
+            m_data.append(Data(data_i + 1, d.m_koodi, d.m_aika, m_pisteet));
             m_varit.append(QColor(piste_inc ? Qt::darkGreen : Qt::gray));
 
             ++data_i;
@@ -151,8 +151,8 @@ void TulosDataModel::setSarja(SarjaP sarja)
         else {
             // Suunnistus - rastit haettava järjestyksessä
             // Oikein ja oikeassa paikassa haettu rasti
-            if (r.sisaltaa(d.m_rasti)) {
-                m_data.append(Data(rasti_i + 1, d.m_rasti, d.m_aika));
+            if (r.sisaltaa(d.m_koodi)) {
+                m_data.append(Data(rasti_i + 1, d.m_koodi, d.m_aika));
                 m_varit.append(QColor(Qt::darkGreen));
                 data_i++;
                 rasti_i++;
@@ -165,14 +165,14 @@ void TulosDataModel::setSarja(SarjaP sarja)
 
             for (int i = rasti_i; i < rastit.count(); i++) {
                 Rasti rr = rastit.at(i);
-                if (rr.sisaltaa(d.m_rasti)) {
+                if (rr.sisaltaa(d.m_koodi)) {
                     found = true;
                     break;
                 }
             }
 
             if (!found) {
-                m_data.append(Data(_("?"), d.m_rasti, d.m_aika));
+                m_data.append(Data(_("?"), d.m_koodi, d.m_aika));
                 m_varit.append(QColor(Qt::gray));
                 data_i++;
 
@@ -182,10 +182,10 @@ void TulosDataModel::setSarja(SarjaP sarja)
             // Tarkistetaan onko rastia haettu
             found = false;
 
-            for (int i = data_i; i < m_rastit.count(); i++) {
-                RastiData dd = m_rastit.at(i);
+            for (int i = data_i; i < m_leimat.count(); i++) {
+                EmitLeima dd = m_leimat.at(i);
 
-                if (r.sisaltaa(dd.m_rasti)) {
+                if (r.sisaltaa(dd.m_koodi)) {
                     found = true;
                     break;
                 }
@@ -206,17 +206,17 @@ void TulosDataModel::setSarja(SarjaP sarja)
 
             // merkitään harmaaksi rastit, jotka haettiin tässä välissä
             if (found && last) {
-                for (; data_i < m_rastit.count(); data_i++) {
-                    RastiData dd = m_rastit.at(data_i);
+                for (; data_i < m_leimat.count(); data_i++) {
+                    EmitLeima dd = m_leimat.at(data_i);
 
-                    if (r.sisaltaa(dd.m_rasti)) {
-                        m_data.append(Data(rasti_i + 1, dd.m_rasti, dd.m_aika));
+                    if (r.sisaltaa(dd.m_koodi)) {
+                        m_data.append(Data(rasti_i + 1, dd.m_koodi, dd.m_aika));
                         m_varit.append(QColor(Qt::darkGreen));
 
                         break;
                     }
                     else {
-                        m_data.append(Data(_("?"), dd.m_rasti, dd.m_aika));
+                        m_data.append(Data(_("?"), dd.m_koodi, dd.m_aika));
                         m_varit.append(QColor(Qt::gray));
                     }
                 }
@@ -229,10 +229,10 @@ void TulosDataModel::setSarja(SarjaP sarja)
 
             QString tila = _("rasti puuttuu");
 
-            for (int i = data_i; i < m_rastit.count(); i++) {
-                RastiData dd = m_rastit.at(i);
+            for (int i = data_i; i < m_leimat.count(); i++) {
+                EmitLeima dd = m_leimat.at(i);
 
-                if (r.sisaltaa(dd.m_rasti)) {
+                if (r.sisaltaa(dd.m_koodi)) {
                     tila = _("rasti väärin");
                     break;
                 }
@@ -247,11 +247,11 @@ void TulosDataModel::setSarja(SarjaP sarja)
 
     // Laske sakkoton aika
     int aika = 0, aika_250 = 0;
-    foreach (const RastiData& d, m_rastit) {
-        if (d.m_rasti == 0)
+    foreach (const EmitLeima& d, m_leimat) {
+        if (d.m_koodi == 0)
             continue;
 
-        if (d.m_rasti == 250) {
+        if (d.m_koodi == 250) {
             aika_250 = d.m_aika;
             continue;
         }
@@ -259,7 +259,7 @@ void TulosDataModel::setSarja(SarjaP sarja)
         // Pistesuunnistuksessa aika otetaan viimeiseksi kerätystä rastileimasta tai maalileimasta
         // FIXME: normaalisuunnistuksessa, jos sarjassa sakot, puuttuva maalirasti aiheuttaa 0
         // FIXME: pistesuunnistuksessa viimeisen leiman pitää kuulla rataan
-        if (rogaining || m_sarja->getMaalirasti().sisaltaa(d.m_rasti))
+        if (rogaining || m_sarja->getMaalirasti().sisaltaa(d.m_koodi))
             aika = d.m_aika;
     }
 
@@ -270,8 +270,8 @@ void TulosDataModel::setSarja(SarjaP sarja)
 
     // Laske virheet (HUOM.: ajan laskettua)
     if (!rogaining) {
-        foreach (const RastiData& d, m_rastit) {
-            if (d.m_aika <= 5 && d.m_rasti != 0)
+        foreach (const EmitLeima& d, m_leimat) {
+            if (d.m_aika <= 5 && d.m_koodi != 0)
                 ++m_virheet;
         }
 

@@ -105,10 +105,10 @@ void SerialEmitReaderWidget::readSerial()
         int kuukausi = data[6];
         int vuosi = data[7];
 
-        QList<RastiData> rastit;
+        QList<EmitLeima> leimat;
 
         for (int i = 10; i < 160; i = i + 3) {
-            rastit.append(RastiData(data[i], (data[i+2] << 8) + data[i+1]));
+            leimat.append(EmitLeima(data[i], (data[i+2] << 8) + data[i+1]));
         }
 
         if (m_viimeisinEmit != numero && !tarkiste1 && !tarkiste2) {
@@ -116,7 +116,7 @@ void SerialEmitReaderWidget::readSerial()
                 QApplication::beep();
             }
 
-            emit readEmit(QDateTime::currentDateTime(), numero, vuosi, kuukausi, rastit);
+            emit readEmit(QDateTime::currentDateTime(), numero, vuosi, kuukausi, leimat);
 
             m_viimeisinEmit = numero;
         }

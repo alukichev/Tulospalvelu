@@ -7,7 +7,7 @@
 #include "type/tapahtuma.h"
 #include "type/sarja.h"
 #include "type/rasti.h"
-#include "type/rastidata.h"
+#include "type/emitleima.h"
 
 #include "model/tulosdatamodel.h"
 
@@ -27,7 +27,7 @@ public:
     ~TulosForm();
 
     void setupShortcuts();
-    void setupForm(const QDateTime& lukuaika, const QString& numero, int vuosi, int kuukausi, const QList<RastiData>& rastit, QVariant luettuEmitId = QVariant());
+    void setupForm(const QDateTime& lukuaika, const QString& numero, int vuosi, int kuukausi, const QList<EmitLeima>& leimat, QVariant luettuEmitId = QVariant());
     void setupForm(const QVariant& tulosId);
 
     bool isAllSaved() const;
@@ -96,7 +96,7 @@ private:
     QVariant getTila();
     void setAllSaved(bool b);
 
-    void tarkistaKoodi99(const QList<RastiData>& rastit);
+    void tarkistaKoodi99(const QList<EmitLeima>& leimat);
 
     void tarkistaEmit();
     void tarkistaTulos();

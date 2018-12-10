@@ -3,7 +3,7 @@
 
 #include <QtWidgets>
 
-#include "type/rastidata.h"
+#include "type/emitleima.h"
 #include "type/sarja.h"
 #include "type/rasti.h"
 
@@ -13,7 +13,7 @@ class EmitDataModel : public QAbstractItemModel
 {
     Q_OBJECT
 public:
-    explicit EmitDataModel(QObject *parent, QString numero = "54321", int vuosi = 12, int kuukausi = 7, QList<RastiData> rastit = QList<RastiData>(), SarjaP sarja = SarjaP{});
+    explicit EmitDataModel(QObject *parent, QString numero = "54321", int vuosi = 12, int kuukausi = 7, QList<EmitLeima> leimat = QList<EmitLeima>(), SarjaP sarja = SarjaP{});
 
     Qt::ItemFlags flags(const QModelIndex &index) const;
 
@@ -32,7 +32,7 @@ public:
     QString getNumero() const;
     int getVuosi() const;
     int getKuukausi() const;
-    QList<RastiData> getRastit() const;
+    QList<EmitLeima> getRastit() const;
 
     void setSarja(SarjaP sarja);
     SarjaP getSarja() const;
@@ -41,7 +41,7 @@ protected:
     QString m_numero;
     int m_vuosi;
     int m_kuukausi;
-    QList<RastiData> m_rastit;
+    QList<EmitLeima> m_leimat;
     QList<QColor> m_varit;
 
     SarjaP m_sarja;

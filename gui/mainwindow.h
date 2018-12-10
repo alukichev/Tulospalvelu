@@ -5,7 +5,7 @@
 #include <QtSql>
 
 #include "type/tietokanta.h"
-#include "type/rastidata.h"
+#include "type/emitleima.h"
 
 #include "dialog/tietojadialog.h"
 #include "dialog/tapahtumadialog.h"
@@ -54,7 +54,7 @@ private:
     VuokraEmititForm *m_vuokraEmititForm;
     TulosnayttoForm *m_tulosnayttoForm;
 
-    TulosForm* newTulosForm(const QDateTime& lukuaika, const QString& numero, int vuosi, int kuukausi, const QList<RastiData>& rastit, QVariant luettuEmitId = QVariant());
+    TulosForm* newTulosForm(const QDateTime& lukuaika, const QString& numero, int vuosi, int kuukausi, const QList<EmitLeima>& leimat, QVariant luettuEmitId = QVariant());
     TulosForm* newTulosForm(QVariant tulosId);
     SarjatForm* newSarjatForm();
     TuloksetForm* newTuloksetForm();
@@ -76,7 +76,7 @@ private:
     void closeEvent(QCloseEvent *);
 
 private slots:
-    void handleReadEmit(QDateTime lukuaika, QString numero, int vuosi, int kuukausi, QList<RastiData> rastit);
+    void handleReadEmit(QDateTime lukuaika, QString numero, int vuosi, int kuukausi, QList<EmitLeima> leimat);
     void handleRequestClose(QWidget *widget);
     void handleRequestOpenTulosForm(QVariant tulosId);
     void handleTulosTallennettu();

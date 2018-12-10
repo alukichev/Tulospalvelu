@@ -10,7 +10,7 @@ QT_USE_NAMESPACE
 
 #endif
 
-#include "type/rastidata.h"
+#include "type/emitleima.h"
 
 #include "makrot.h"
 
@@ -34,7 +34,7 @@ public:
 
     QStringList getPorts() const;
 signals:
-    void readEmit(QDateTime lukuaika, QString numero, int vuosi, int kuukausi, QList<RastiData> rastit);
+    void readEmit(QDateTime lukuaika, QString numero, int vuosi, int kuukausi, QList<EmitLeima> leimat);
     void statusChanged(QString status);
 
 private slots:

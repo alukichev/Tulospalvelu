@@ -53,7 +53,6 @@ SOURCES += main.cpp\
 HEADERS  += mainwindow.h \
     widget/testemitreaderwidget.h \
     model/emitdatamodel.h \
-    type/rastidata.h \
     widget/serialemitreaderwidget.h \
     makrot.h \
     form/sarjatform.h \
@@ -81,7 +80,8 @@ HEADERS  += mainwindow.h \
     dialog/yhteislahtodialog.h \
     delegate/tulospalveludelegate.h \
     dialog/uusitapahtumadialog.h \
-    type/heap.h
+    type/heap.h \
+    type/emitleima.h
 
 FORMS    += mainwindow.ui \
     widget/testemitreaderwidget.ui \

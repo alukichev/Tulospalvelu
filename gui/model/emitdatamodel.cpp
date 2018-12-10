@@ -1,18 +1,18 @@
 #include "emitdatamodel.h"
 
-EmitDataModel::EmitDataModel(QObject *parent, QString numero, int vuosi, int kuukausi, QList<RastiData> rastit, SarjaP sarja) :
+EmitDataModel::EmitDataModel(QObject *parent, QString numero, int vuosi, int kuukausi, QList<EmitLeima> leimat, SarjaP sarja) :
     QAbstractItemModel(parent),
     m_numero(numero),
     m_vuosi(vuosi),
     m_kuukausi(kuukausi),
-    m_rastit(rastit),
+    m_leimat(leimat),
     m_sarja(sarja)
 {
-    if (m_rastit.empty()) {
-        m_rastit.reserve(50);
+    if (m_leimat.empty()) {
+        m_leimat.reserve(50);
 
         for (int i = 0; i < 50; i++)
-            m_rastit.append(RastiData(0, 0));
+            m_leimat.append(EmitLeima{});
     }
 
     setSarja(sarja);
@@ -25,7 +25,7 @@ int EmitDataModel::rowCount(const QModelIndex &parent) const
             return 0;
         }
 
-        return m_rastit.count();
+        return m_leimat.count();
     }
 
     return 1;
@@ -107,9 +107,9 @@ QVariant EmitDataModel::data(const QModelIndex &index, int role) const
             case 0:
                 return index.row();
             case 1:
-                return m_rastit.at(index.row()).m_rasti;
+                return m_leimat.at(index.row()).m_koodi;
             case 2:
-                return m_rastit.at(index.row()).m_aika;
+                return m_leimat.at(index.row()).m_aika;
         }
     }
 
@@ -134,18 +134,18 @@ bool EmitDataModel::setData(const QModelIndex &index, const QVariant &value, int
     }
 
     if (static_cast<int>(index.internalId()) > -1) {
-        RastiData rasti = m_rastit.at(index.row());
+        EmitLeima rasti = m_leimat.at(index.row());
 
         switch (index.column()) {
             case 1:
-                rasti.m_rasti = value.toInt();
+                rasti.m_koodi = value.toInt();
                 break;
             case 2:
                 rasti.m_aika = value.toInt();
                 break;
         }
 
-        m_rastit.replace(index.row(), rasti);
+        m_leimat.replace(index.row(), rasti);
 
         return true;
     }
@@ -182,9 +182,9 @@ int EmitDataModel::getKuukausi() const
     return m_kuukausi;
 }
 
-QList<RastiData> EmitDataModel::getRastit() const
+QList<EmitLeima> EmitDataModel::getRastit() const
 {
-    return m_rastit;
+    return m_leimat;
 }
 
 SarjaP EmitDataModel::getSarja() const
@@ -200,7 +200,7 @@ void EmitDataModel::setSarja(SarjaP sarja)
     m_varit.clear();
 
     if (!m_sarja) {
-        for (int i = 0; i < m_rastit.count(); i++)
+        for (int i = 0; i < m_leimat.count(); i++)
             m_varit.append(QColor(Qt::black));
 
         return;
@@ -212,13 +212,13 @@ void EmitDataModel::setSarja(SarjaP sarja)
     int virheita = 0;
     const bool rogaining = Tapahtuma::tapahtuma()->tyyppi() == RACE_ROGAINING;
 
-    foreach (const RastiData& d, m_rastit) {
-        if (d.m_rasti == 0) {
+    foreach (const EmitLeima& d, m_leimat) {
+        if (d.m_koodi == 0) {
             m_varit.append(QColor(Qt::gray));
             continue;
         }
 
-        if (d.m_rasti == 250 || d.m_rasti == 254) {
+        if (d.m_koodi == 250 || d.m_koodi == 254) {
             m_varit.append(QColor(Qt::blue));
             continue;
         }
@@ -228,7 +228,7 @@ void EmitDataModel::setSarja(SarjaP sarja)
         for (int i = 0; i <= virheita && rasti_i + i < rastit.count(); i++) {
             Rasti r = rastit.at(rasti_i + i);
 
-            if (rogaining || r.sisaltaa(d.m_rasti)) {
+            if (rogaining || r.sisaltaa(d.m_koodi)) {
                 ok = true;
                 break;
             }

@@ -86,18 +86,18 @@ void TulosForm::setupShortcuts()
             this, SLOT(handleShortcutCtrlH()));
 }
 
-void TulosForm::setupForm(const QDateTime& lukuaika, const QString &numero, int vuosi, int kuukausi, const QList<RastiData> &rastit, QVariant luettuEmitId)
+void TulosForm::setupForm(const QDateTime& lukuaika, const QString &numero, int vuosi, int kuukausi, const QList<EmitLeima> &leimat, QVariant luettuEmitId)
 {
     m_luettuEmitId = luettuEmitId;
     m_maaliaika = lukuaika;
 
-    tarkistaKoodi99(rastit);
+    tarkistaKoodi99(leimat);
 
     setAllSaved(false);
 
     QSqlDatabase::database().transaction();
 
-    m_tulosDataModel = new TulosDataModel(this, numero, vuosi, kuukausi, rastit);
+    m_tulosDataModel = new TulosDataModel(this, numero, vuosi, kuukausi, leimat);
 
     ui->emitDataView->setModel(m_tulosDataModel);
 
@@ -119,16 +119,16 @@ void TulosForm::setupForm(const QDateTime& lukuaika, const QString &numero, int 
 
     SarjaP sarja = m_tulosDataModel->getSarja();
 
-    foreach (RastiData d, rastit) {
-        if (sarja && sarja->getMaalirasti().sisaltaa(d.m_rasti)) {
+    foreach (EmitLeima d, leimat) {
+        if (sarja && sarja->getMaalirasti().sisaltaa(d.m_koodi)) {
             maali_aikaleima = d.m_aika;
         }
 
-        if (d.m_rasti == 250) {
+        if (d.m_koodi == 250) {
             lukija_aikaleima = d.m_aika;
         }
 
-        if (d.m_aika <= 5 && d.m_rasti != 0 && ui->eiNollaustaLabel->text().isEmpty()) {
+        if (d.m_aika <= 5 && d.m_koodi != 0 && ui->eiNollaustaLabel->text().isEmpty()) {
             ui->eiNollaustaLabel->setText(_("Suunnistaja ei ole nollannut emittiä!"));
         }
     }
@@ -203,7 +203,7 @@ void TulosForm::setupForm(const QVariant &tulosId)
                 r.value("emit").toString(),
                 r.value("vuosi").toInt(),
                 r.value("kuukausi").toInt(),
-                RastiData::luettuRasit(r.value("luettu_emit"))
+                EmitLeima::haeLeimat(r.value("luettu_emit"))
     );
 
     ui->emitDataView->setModel(m_tulosDataModel);
@@ -278,23 +278,23 @@ void TulosForm::valitseSarja()
     int suurin_paino = 0;
     const bool rogaining = Tapahtuma::tapahtuma()->tyyppi() == RACE_ROGAINING;
 
-    QList<RastiData> haettu = m_tulosDataModel->getRastit();
+    QList<EmitLeima> haettu = m_tulosDataModel->getRastit();
 
     for (int sarja_i = 0; sarja_i < sarjat.size(); ++sarja_i) {
         SarjaP s = sarjat.at(sarja_i);
         int paino = 0;
 
         for (int jarj = 1; jarj <= haettu.size(); ++jarj) {
-            const RastiData& d = haettu.at(jarj - 1);
+            const EmitLeima& d = haettu.at(jarj - 1);
 
-            if (d.m_rasti == 0) {
+            if (d.m_koodi == 0) {
                 continue;
             }
 
             for (int i = 0; i < s->getRastit().size(); ++i) {
                 const Rasti& r = s->getRastit().at(i);
 
-                if (r.sisaltaa(d.m_rasti)) {
+                if (r.sisaltaa(d.m_koodi)) {
                     paino++;
 
                     if (!rogaining && jarj == i + 1)
@@ -377,21 +377,21 @@ void TulosForm::updateTilaLabel()
     );
 }
 
-void TulosForm::tarkistaKoodi99(const QList<RastiData> &rastit)
+void TulosForm::tarkistaKoodi99(const QList<EmitLeima> &leimat)
 {
     int aika = -1;
 
-    foreach (RastiData d, rastit) {
-        if (d.m_rasti == 99) {
+    foreach (const EmitLeima& d, leimat) {
+        if (d.m_koodi == 99) {
             aika = d.m_aika;
             break;
         }
     }
 
     if (aika > -1) {
-        foreach (RastiData d, rastit) {
+        foreach (const EmitLeima& d, leimat) {
             if (abs(d.m_aika - aika) <= 5) {
-                ui->koodi99Label->setText(_("Emitkoodilla %1 oleva\nrasti on sammumassa").arg(QString::number(d.m_rasti)));
+                ui->koodi99Label->setText(_("Emitkoodilla %1 oleva\nleimasin on sammumassa").arg(QString::number(d.m_koodi)));
                 break;
             }
         }
@@ -600,10 +600,10 @@ void TulosForm::lataaLuettuEmit()
     query.prepare("INSERT INTO luettu_emit_rasti (luettu_emit, numero, koodi, aika) VALUES (?, ?, ?, ?)");
 
     int nro = 1;
-    foreach (RastiData d, m_tulosDataModel->getRastit()) {
+    foreach (EmitLeima d, m_tulosDataModel->getRastit()) {
         query.addBindValue(m_luettuEmitId);
         query.addBindValue(nro);
-        query.addBindValue(d.m_rasti);
+        query.addBindValue(d.m_koodi);
         query.addBindValue(d.m_aika);
 
         SQL_EXEC(query,);
