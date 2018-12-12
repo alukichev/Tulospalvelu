@@ -56,7 +56,7 @@ bool YhteislahtoDialog::muutaYhteislahdoksi(const QVariant &sarja_id, const QDat
                 "  AND NOT poistettu\n"
     );
 
-    query.addBindValue(Tapahtuma::tapahtuma()->id());
+    query.addBindValue(Tapahtuma::Get()->id());
     query.addBindValue(sarja_id);
 
     updateTulos.prepare(
@@ -151,7 +151,7 @@ void YhteislahtoDialog::sqlSarja()
                 "WHERE tapahtuma = ?\n"
     );
 
-    query.addBindValue(Tapahtuma::tapahtuma()->id());
+    query.addBindValue(Tapahtuma::Get()->id());
 
     SQL_EXEC(query,);
 
@@ -172,7 +172,7 @@ void YhteislahtoDialog::sqlLahtoaika()
                 "LIMIT 1\n"
     );
 
-    query.addBindValue(Tapahtuma::tapahtuma()->id());
+    query.addBindValue(Tapahtuma::Get()->id());
 
     SQL_EXEC(query,);
 

@@ -13,11 +13,6 @@ public:
     explicit RastiModel(QObject *parent);
 
     QVariant headerData(int section, Qt::Orientation orientation, int role) const;
-
-signals:
-
-public slots:
-
 };
 
 #endif // RASTIMODEL_H

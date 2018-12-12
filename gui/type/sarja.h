@@ -16,12 +16,10 @@ typedef QSharedPointer<Sarja> SarjaP;
 class Sarja
 {
 public:
-    static SarjaP dbInsert(const Tapahtuma *tapahtuma);
+    static SarjaP dbInsert(void);
     static SarjaP haeSarja(const QVariant &id);
-    static QList<SarjaP> haeSarjat(const Tapahtuma* tapahtuma = Tapahtuma::tapahtuma(), bool rw = true);
-    static inline QList<SarjaP> haeSarjatRO(const Tapahtuma* tapahtuma = Tapahtuma::tapahtuma()) {
-        return haeSarjat(tapahtuma, false);
-    }
+    static QList<SarjaP> haeSarjat(bool rw = true);
+    static inline QList<SarjaP> haeSarjatRO(void) { return haeSarjat(false); }
 
     inline QVariant getId() const { return m_id; }
     inline QString getNimi() const { return m_nimi; }

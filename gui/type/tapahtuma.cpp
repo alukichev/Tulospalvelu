@@ -1,20 +1,35 @@
+#include <QSharedPointer>
+
 #include "tapahtuma.h"
+
+class Tapahtuma::P : public QSharedPointer<Tapahtuma>
+{
+public:
+    inline Tapahtuma *data(void) {
+        if (!B::data())
+            this->reset(new Tapahtuma{});
+        return B::data();
+    }
+
+    inline Tapahtuma *operator ->(void) { return this->data(); }
+
+private:
+    typedef QSharedPointer<Tapahtuma> B;
+};
 
 static inline int raceType(int v)
 {
     return (v < 0 || v > RACE_ROGAINING) ? RACE_CLASSIC : v;
 }
 
-Tapahtuma * Tapahtuma::ms_tapahtuma = new Tapahtuma(0, 0);
+Tapahtuma::P Tapahtuma::ms_tapahtuma;
 
-Tapahtuma::Tapahtuma(QObject *parent, int id) :
-    QObject(parent),
+Tapahtuma::Tapahtuma(int id, const QString& nimi, int tyyppi) :
     m_id(id),
-    m_nimi(),
-    m_tyyppi(RACE_CLASSIC)
+    m_nimi(nimi),
+    m_tyyppi(tyyppi)
 {
 }
-
 
 int Tapahtuma::id() const
 {
@@ -31,7 +46,7 @@ int Tapahtuma::tyyppi(void) const
     return m_tyyppi;
 }
 
-void Tapahtuma::luoUusiTapahtuma(const QString &nimi, int tyyppi)
+void Tapahtuma::Luo(const QString &nimi, int tyyppi)
 {
     tyyppi = raceType(tyyppi);
 
@@ -49,16 +64,15 @@ void Tapahtuma::luoUusiTapahtuma(const QString &nimi, int tyyppi)
     ms_tapahtuma->m_tyyppi = tyyppi;
 }
 
-const Tapahtuma* Tapahtuma::tapahtuma()
+const Tapahtuma* Tapahtuma::Get(void)
 {
-    if (ms_tapahtuma->m_nimi.isNull()) {
-        Tapahtuma::valitseTapahtuma(ms_tapahtuma->m_id);
-    }
+    if (!ms_tapahtuma)
+        Tapahtuma::Valitse(0);
 
-    return ms_tapahtuma;
+    return ms_tapahtuma.data();
 }
 
-bool Tapahtuma::valitseTapahtuma(int id)
+bool Tapahtuma::Valitse(int id)
 {
     ms_tapahtuma->m_id = id;
     ms_tapahtuma->m_nimi = QString();

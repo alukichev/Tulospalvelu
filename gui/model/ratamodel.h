@@ -35,7 +35,6 @@ public:
     bool removeRow(int row, const QModelIndex &parent);
 
 private:
-    const Tapahtuma* m_tapahtuma;
     QList<SarjaP> m_sarjat;
 };
 

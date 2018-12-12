@@ -6,13 +6,13 @@ SarjatForm::SarjatForm(QWidget *parent) :
     ui(new Ui::SarjatForm),
     m_delegate(new TulospalveluDelegate(this)),
     m_sarjaId(),
-    m_sarjaModel(new RataModel(this, Tapahtuma::tapahtuma())),
+    m_sarjaModel(new RataModel(this, Tapahtuma::Get())),
     m_rastiHeaderModel(new RastiModel(this)),
     m_headerView(new QHeaderView(Qt::Horizontal, this))
 {
     ui->setupUi(this);
 
-    const bool rogaining = Tapahtuma::tapahtuma()->tyyppi() == RACE_ROGAINING;
+    const bool rogaining = Tapahtuma::Get()->tyyppi() == RACE_ROGAINING;
 
     ui->sakkoLabel->setText(rogaining
                             ? _("Sakko annetaan pisteinä joka aikarajan yli menevän ajan alkavasta minuutista")

@@ -6,7 +6,7 @@ static inline bool sijoita(const Tulos& verta, const QTime& aika, int pisteet)
     if (verta.m_tila != Tulos::Hyvaksytty)
         return false;
 
-    switch (Tapahtuma::tapahtuma()->tyyppi()) {
+    switch (Tapahtuma::Get()->tyyppi()) {
     case RACE_ROGAINING:
         return pisteet < verta.m_pisteet || (pisteet == verta.m_pisteet && verta.m_aika < aika);
     case RACE_CLASSIC:
@@ -37,7 +37,7 @@ Tulos::Tulos(int id, const QString &sarja, int sija, const QString &_emit,
 
 QList<Tulos> Tulos::haeTulokset(SarjaP sarja)
 {
-    QString sort = Tapahtuma::tapahtuma()->tyyppi() == RACE_ROGAINING
+    QString sort = Tapahtuma::Get()->tyyppi() == RACE_ROGAINING
             ? "t.pisteet DESC, t.aika ASC\n"
             : "t.aika ASC\n";
 
@@ -49,7 +49,7 @@ QList<Tulos> Tulos::haeTulokset(SarjaP sarja)
                 "  JOIN kilpailija AS k ON k.id = t.kilpailija\n"
                 "WHERE t.tapahtuma = ? AND t.sarja = ? AND NOT t.poistettu\n"
                 "ORDER BY hyvaksytty DESC,\n") + sort);
-    query.addBindValue(Tapahtuma::tapahtuma()->id());
+    query.addBindValue(Tapahtuma::Get()->id());
     query.addBindValue(sarja->getId());
 
     QList<Tulos> tulokset;

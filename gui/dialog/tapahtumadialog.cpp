@@ -13,7 +13,7 @@ TapahtumaDialog::TapahtumaDialog(QWidget *parent) :
 
     ui->tapahtumaView->setModel(m_tapahtumaModel);
 
-    ui->cancelButton->setEnabled(Tapahtuma::tapahtuma()->id() != 0);
+    ui->cancelButton->setEnabled(Tapahtuma::Get()->id() != 0);
 
     sqlTapahtuma();
 }
@@ -26,7 +26,7 @@ TapahtumaDialog::~TapahtumaDialog()
 void TapahtumaDialog::on_valitseButton_clicked()
 {
     foreach (QModelIndex index, ui->tapahtumaView->selectionModel()->selectedRows(0)) {
-        Tapahtuma::valitseTapahtuma(index.data(Qt::EditRole).toInt());
+        Tapahtuma::Valitse(index.data(Qt::EditRole).toInt());
 
         accept();
 
@@ -55,7 +55,7 @@ void TapahtumaDialog::on_uusiButton_clicked()
         return;
     }
 
-    Tapahtuma::luoUusiTapahtuma(d.nimi(), d.tyyppi());
+    Tapahtuma::Luo(d.nimi(), d.tyyppi());
 
     accept();
 }

@@ -317,7 +317,7 @@ TuloksetForm::TuloksetForm(QWidget *parent) :
     ui->tulosView->addAction(ui->actionPoistaTulos);
 
     // Pistesuunnistuksessa ei ole väliaikoja HTML- eikä XML- muodossa
-    if (Tapahtuma::tapahtuma()->tyyppi() == RACE_ROGAINING) {
+    if (Tapahtuma::Get()->tyyppi() == RACE_ROGAINING) {
         ui->tab_2->hide();
         ui->tab_5->hide();
     }
@@ -338,7 +338,7 @@ void TuloksetForm::sqlTulokset()
 
     query.prepare("SELECT COUNT(*) AS kpl, tila FROM tulos WHERE tapahtuma = ? AND NOT poistettu GROUP BY tila");
 
-    query.addBindValue(Tapahtuma::tapahtuma()->id());
+    query.addBindValue(Tapahtuma::Get()->id());
 
     SQL_EXEC(query,);
 
@@ -372,7 +372,7 @@ void TuloksetForm::on_closeButton_clicked()
 
 void TuloksetForm::updateTulosEdit()
 {
-    const Tapahtuma *tapahtuma = Tapahtuma::tapahtuma();
+    const Tapahtuma *tapahtuma = Tapahtuma::Get();
     QTextEdit *edit = ui->tulosEdit;
 
     edit->clear();
@@ -413,12 +413,12 @@ void TuloksetForm::updateTulosEdit()
 void TuloksetForm::updateValiaikaEdit()
 {
     QTextEdit *edit = ui->valiaikaEdit;
-    const bool rogaining = Tapahtuma::tapahtuma()->tyyppi() == RACE_ROGAINING;
+    const bool rogaining = Tapahtuma::Get()->tyyppi() == RACE_ROGAINING;
 
     edit->clear();
 
     m_valiaikaString.clear();
-    m_valiaikaString += _("<H2>%1</H2>\n").arg(Tapahtuma::tapahtuma()->nimi());
+    m_valiaikaString += _("<H2>%1</H2>\n").arg(Tapahtuma::Get()->nimi());
 /*    m_valiaikaString += _("<p>");
 
     foreach (const Sarja *s, m_sarjat) {
@@ -539,7 +539,7 @@ void TuloksetForm::sqlTulos()
                 "ORDER BY t.id DESC\n"
     );
 
-    query.addBindValue(Tapahtuma::tapahtuma()->id());
+    query.addBindValue(Tapahtuma::Get()->id());
 
     SQL_EXEC(query,);
 
@@ -615,7 +615,7 @@ void TuloksetForm::on_fileButton_clicked()
     }
 
     if (html) {
-        file.write(_("<html><head><title>%1</title><meta http-equiv=\"Content-Type\" content=\"text/html; charset=iso-8859-1\"/></head><body>\n").arg(Tapahtuma::tapahtuma()->nimi()).toLatin1());
+        file.write(_("<html><head><title>%1</title><meta http-equiv=\"Content-Type\" content=\"text/html; charset=iso-8859-1\"/></head><body>\n").arg(Tapahtuma::Get()->nimi()).toLatin1());
         file.write(tulos->toLatin1());
         file.write("</body></html>");
     } else if (!xml.isEmpty()) {

@@ -41,11 +41,11 @@ QVariant Sarja::getRataId(bool replace) const
     return query.lastInsertId();
 }
 
-QList<SarjaP> Sarja::haeSarjat(const Tapahtuma *tapahtuma, bool rw)
+QList<SarjaP> Sarja::haeSarjat(bool rw)
 {
     QSqlQuery query;
     query.prepare("SELECT id, nimi, sakko, yhteislahto, aikaraja FROM sarja WHERE tapahtuma = ?");
-    query.addBindValue(tapahtuma->id());
+    query.addBindValue(Tapahtuma::Id());
 
     QList<SarjaP> sarjat;
     SQL_EXEC(query, sarjat);
@@ -66,7 +66,7 @@ SarjaP Sarja::haeSarja(const QVariant &id)
 {
     QSqlQuery query;
     query.prepare("SELECT nimi, sakko, yhteislahto, aikaraja FROM sarja WHERE tapahtuma = ? AND id = ?");
-    query.addBindValue(Tapahtuma::tapahtuma()->id());
+    query.addBindValue(Tapahtuma::Get()->id());
     query.addBindValue(id);
 
     SarjaP s;
@@ -198,10 +198,9 @@ bool Sarja::moveRasti(int &newindex, int from, int to)
     return true;
 }
 
-SarjaP Sarja::dbInsert(const Tapahtuma *tapahtuma)
+SarjaP Sarja::dbInsert(void)
 {
-    if (!tapahtuma)
-        tapahtuma = Tapahtuma::tapahtuma();
+    const Tapahtuma *tapahtuma = Tapahtuma::Get();
 
     QSqlDatabase::database().transaction();
 

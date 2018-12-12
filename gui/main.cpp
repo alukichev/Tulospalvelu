@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
     w.show();
 
     // Tarkistetaan valittiinko tapahtuma vai painettiinko esc tai muuta.
-    if (Tapahtuma::tapahtuma()->id() == 0) {
+    if (Tapahtuma::Get()->id() == 0) {
         return 0;
     }
 

@@ -32,7 +32,7 @@ QList<Valiaika> Valiaika::haeValiajat(const QVariant &tulosId)
 
 QList<Valiaika> Valiaika::haeRastiValiajat(SarjaP sarja, int jarj)
 {
-    const int tapahtuma = Tapahtuma::tapahtuma()->id();
+    const int tapahtuma = Tapahtuma::Get()->id();
     QList<Valiaika> valiajat;
 
     if (tapahtuma == RACE_ROGAINING) // Pistesuunnistuksessa vapaa rastijärjestys kilpailijoille

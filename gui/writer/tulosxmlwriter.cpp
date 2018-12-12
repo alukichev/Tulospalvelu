@@ -28,7 +28,7 @@ void TulosXMLWriter::writeStartXML()
 
     m_stream.writeStartElement("Event");
 
-    m_stream.writeTextElement("EventName", Tapahtuma::tapahtuma()->nimi());
+    m_stream.writeTextElement("EventName", Tapahtuma::Get()->nimi());
 }
 
 void TulosXMLWriter::writeEndXML()

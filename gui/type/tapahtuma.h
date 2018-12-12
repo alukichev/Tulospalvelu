@@ -6,32 +6,31 @@
 
 #include "makrot.h"
 
-class Tapahtuma : public QObject
+class Tapahtuma
 {
-    Q_OBJECT
 public:
-    explicit Tapahtuma(QObject *parent, int id);
-
     int id() const;
     QString nimi() const;
     int tyyppi(void) const;
 
 
-    static bool valitseTapahtuma(int id);
-    static const Tapahtuma* tapahtuma();
-    static inline int Id(void) { return tapahtuma()->id(); }
+    static bool Valitse(int id);
+    static const Tapahtuma* Get(void);
+    static inline int Id(void) { return Get()->id(); }
+    static inline int Tyyppi(void) { return Get()->tyyppi(); }
 
-    static void luoUusiTapahtuma(const QString& nimi, int tyyppi = RACE_CLASSIC);
-signals:
-
-public slots:
+    static void Luo(const QString& nimi, int tyyppi = RACE_CLASSIC);
 
 private:
+    class P;
+
+    Tapahtuma(int id = 0, const QString &nimi = QString(), int tyyppi = RACE_CLASSIC);
+
     int m_id;
     QString m_nimi;
     int m_tyyppi;
 
-    static Tapahtuma *ms_tapahtuma;
+    static P ms_tapahtuma;
 };
 
 #endif // TAPAHTUMA_H

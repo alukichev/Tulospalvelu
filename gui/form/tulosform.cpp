@@ -44,7 +44,7 @@ TulosForm::TulosForm(QWidget *parent) :
     ui->sarjaBox->installEventFilter(this);
     ui->tilaBox->installEventFilter(this);
 
-    if (Tapahtuma::tapahtuma()->tyyppi() != RACE_ROGAINING) {
+    if (Tapahtuma::Get()->tyyppi() != RACE_ROGAINING) {
         hideItems(ui->pisteLayout);
         hideItems(ui->pkorjLayout);
     }
@@ -184,7 +184,7 @@ void TulosForm::setupForm(const QVariant &tulosId)
                 "  AND t.id = ?\n"
     );
 
-    query.addBindValue(Tapahtuma::tapahtuma()->id());
+    query.addBindValue(Tapahtuma::Get()->id());
     query.addBindValue(m_tulosId);
 
     SQL_EXEC(query,);
@@ -256,7 +256,7 @@ void TulosForm::sqlSarja()
 
     query.prepare("SELECT id, nimi FROM sarja WHERE tapahtuma = ?");
 
-    query.addBindValue(Tapahtuma::tapahtuma()->id());
+    query.addBindValue(Tapahtuma::Get()->id());
 
     SQL_EXEC(query, );
 
@@ -276,7 +276,7 @@ void TulosForm::valitseSarja()
 
     int suurin = 0;
     int suurin_paino = 0;
-    const bool rogaining = Tapahtuma::tapahtuma()->tyyppi() == RACE_ROGAINING;
+    const bool rogaining = Tapahtuma::Get()->tyyppi() == RACE_ROGAINING;
 
     QList<EmitLeima> haettu = m_tulosDataModel->getRastit();
 
@@ -326,7 +326,7 @@ void TulosForm::updateTila()
 
     // Pistesuunnistuksessa kaikki tulokset hyväksytään
     // Suunnistuksessa tulokset hyväksytään sakon ollessa käytössä
-    if (Tapahtuma::tapahtuma()->tyyppi() == RACE_ROGAINING
+    if (Tapahtuma::Get()->tyyppi() == RACE_ROGAINING
             || s->isSakko() || m_tulosDataModel->getVirheet() == 0) {
         ui->tilaBox->setCurrentIndex(1);
 
@@ -503,7 +503,7 @@ void TulosForm::on_saveButton_clicked()
         query.prepare("INSERT INTO tulos (tapahtuma, emit, kilpailija, sarja, tila, aika, maaliaika, pisteet, sakko, korj_pisteet) "
                       "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-        query.addBindValue(Tapahtuma::tapahtuma()->id());
+        query.addBindValue(Tapahtuma::Get()->id());
         query.addBindValue(m_tulosDataModel->getNumero());
         query.addBindValue(kilpailijaId);
         query.addBindValue(sarjaId);
@@ -528,7 +528,7 @@ void TulosForm::on_saveButton_clicked()
                       "SET tapahtuma = ?, emit = ?, kilpailija = ?, sarja = ?, tila = ?, aika = ?, pisteet = ?, sakko = ?, korj_pisteet = ? "
                       "WHERE id = ?");
 
-        query.addBindValue(Tapahtuma::tapahtuma()->id());
+        query.addBindValue(Tapahtuma::Get()->id());
         query.addBindValue(m_tulosDataModel->getNumero());
         query.addBindValue(kilpailijaId);
         query.addBindValue(sarjaId);
@@ -589,7 +589,7 @@ void TulosForm::lataaLuettuEmit()
 
     query.prepare("INSERT INTO luettu_emit (tapahtuma, emit, luettu) VALUES (?, ?, ?)");
 
-    query.addBindValue(Tapahtuma::tapahtuma()->id());
+    query.addBindValue(Tapahtuma::Get()->id());
     query.addBindValue(m_tulosDataModel->getNumero());
     query.addBindValue(QDateTime::currentDateTime());
 
@@ -633,7 +633,7 @@ void TulosForm::tarkistaTulos()
                 "ORDER BY t.id DESC"
     );
 
-    query.addBindValue(Tapahtuma::tapahtuma()->id());
+    query.addBindValue(Tapahtuma::Get()->id());
     query.addBindValue(m_tulosDataModel->getNumero());
 
     SQL_EXEC(query,);

@@ -124,8 +124,8 @@ void MainWindow::setupTapahtuma()
 
     this->setWindowTitle(_("Tulospalvelu v%1 - %2 (%3)")
                          .arg(VERSION)
-                         .arg(Tapahtuma::tapahtuma()->nimi())
-                         .arg(Tapahtuma::tapahtuma()->tyyppi()));
+                         .arg(Tapahtuma::Get()->nimi())
+                         .arg(Tapahtuma::Get()->tyyppi()));
     m_serialStatus->setText("Lukulaite: Yhteys katkaistu");
     statusBar()->addPermanentWidget(m_serialStatus);
     statusBar()->addPermanentWidget(m_tuloksiaLabel);
@@ -161,7 +161,7 @@ void MainWindow::connectDatabase()
 #endif
 
     query.prepare("SELECT COUNT(*) FROM tulos WHERE tapahtuma = ?");
-    query.addBindValue(Tapahtuma::tapahtuma()->id());
+    query.addBindValue(Tapahtuma::Get()->id());
 
     // Mikäli kysely epäonnistuu ei tietokantaa ole ja se täytyy luoda
     SQL_EXEC(query, );
@@ -177,7 +177,7 @@ void MainWindow::setupDatabase()
 
     query.prepare("SELECT COUNT(*) FROM tulos WHERE tapahtuma = ? AND NOT poistettu");
 
-    query.addBindValue(Tapahtuma::tapahtuma()->id());
+    query.addBindValue(Tapahtuma::Get()->id());
 
     SQL_EXEC(query, );
 
@@ -187,7 +187,7 @@ void MainWindow::setupDatabase()
 
     query.prepare("SELECT l.*, e.vuosi, e.kuukausi FROM luettu_emit AS l JOIN emit AS e ON e.id = l.emit WHERE l.tapahtuma = ? AND l.tulos IS NULL");
 
-    query.addBindValue(Tapahtuma::tapahtuma()->id());
+    query.addBindValue(Tapahtuma::Get()->id());
 
     SQL_EXEC(query,);
 
@@ -585,7 +585,7 @@ void MainWindow::on_actionVie_tulokset_triggered()
         file.remove();
     }
 
-    Tietokanta::vieTulokset(*Tapahtuma::tapahtuma(), fileName);
+    Tietokanta::vieTulokset(*Tapahtuma::Get(), fileName);
 }
 
 void MainWindow::on_actionTuo_tulokset_triggered()
@@ -598,12 +598,12 @@ void MainWindow::on_actionTuo_tulokset_triggered()
 
     QApplication::setOverrideCursor(Qt::WaitCursor);
 
-    if (Tietokanta::tuoTulokset(*Tapahtuma::tapahtuma(), fileName)) {
+    if (Tietokanta::tuoTulokset(*Tapahtuma::Get(), fileName)) {
         QSqlQuery query;
 
         query.prepare("SELECT COUNT(*) FROM tulos WHERE tapahtuma = ? AND NOT poistettu");
 
-        query.addBindValue(Tapahtuma::tapahtuma()->id());
+        query.addBindValue(Tapahtuma::Get()->id());
 
         SQL_EXEC(query, );
 
@@ -729,7 +729,7 @@ void MainWindow::on_actionAsetukset_triggered()
 
 void MainWindow::on_actionPaivitaValiajat_triggered()
 {
-    SarjaValintaDialog d(this, Sarja::haeSarjatRO(Tapahtuma::tapahtuma()));
+    SarjaValintaDialog d(this, Sarja::haeSarjatRO());
 
     if (d.exec() != QDialog::Accepted) {
         return;
@@ -743,7 +743,7 @@ void MainWindow::on_actionPaivitaValiajat_triggered()
     query.prepare("SELECT id FROM tulos WHERE sarja = ? AND tapahtuma = ?");
 
     query.addBindValue(d.getSarja()->getId());
-    query.addBindValue(Tapahtuma::tapahtuma()->id());
+    query.addBindValue(Tapahtuma::Get()->id());
 
     SQL_EXEC(query,);
 

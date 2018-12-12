@@ -54,7 +54,6 @@ static inline Rasti LuoRasti(bool *ok, SarjaP s, int tapahtumatyyppi)
 
 RataModel::RataModel(QObject *parent, const Tapahtuma *tapahtuma) :
     QAbstractItemModel(parent),
-    m_tapahtuma(tapahtuma),
     m_sarjat(Sarja::haeSarjat(tapahtuma))
 {
 }
@@ -97,7 +96,7 @@ QVariant RataModel::headerData(int section, Qt::Orientation orientation, int rol
     case 1:
         return _("Nimi");
     case 2:
-        return m_tapahtuma->tyyppi() == RACE_ROGAINING ? _("Sakkopisteet") : _("Sakkoaika");
+        return Tapahtuma::Tyyppi() == RACE_ROGAINING ? _("Sakkopisteet") : _("Sakkoaika");
     case 3:
         return _("Lähtöaika");
     case 4:
@@ -263,11 +262,11 @@ bool RataModel::insertRow(int row, const QModelIndex &parent)
     beginInsertRows(parent, row, row);
 
     if (!is_rasti)
-        m_sarjat.insert(row, Sarja::dbInsert(m_tapahtuma));
+        m_sarjat.insert(row, Sarja::dbInsert());
     else {
         SarjaP s = m_sarjat.at(parent.row());
 
-        s->insertRasti(row, LuoRasti(&ok, s, m_tapahtuma->tyyppi()));
+        s->insertRasti(row, LuoRasti(&ok, s, Tapahtuma::Tyyppi()));
         if (ok)
             s->dbUpdate();
     }

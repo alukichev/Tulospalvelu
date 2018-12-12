@@ -84,7 +84,7 @@ void TulosDataModel::setSarja(SarjaP sarja)
 
     int data_i = 0;
     int rasti_i = 0;
-    const bool rogaining = Tapahtuma::tapahtuma()->tyyppi() == RACE_ROGAINING;
+    const bool rogaining = Tapahtuma::Get()->tyyppi() == RACE_ROGAINING;
 
     QSet<int> haetut_rastit;
     haetut_rastit.reserve(rastit.size());
@@ -288,13 +288,13 @@ void TulosDataModel::setSarja(SarjaP sarja)
 
 QTime TulosDataModel::getAika(bool sakkoton) const
 {
-    const bool rogaining = Tapahtuma::tapahtuma()->tyyppi() == RACE_ROGAINING;
+    const bool rogaining = Tapahtuma::Get()->tyyppi() == RACE_ROGAINING;
     return sakkoton || !m_sarja || rogaining ? m_aika : m_aika.addSecs(getVirheet() * m_sarja->getSakko());
 }
 
 int TulosDataModel::getPisteet(bool sakkoton) const
 {
-    const bool rogaining = Tapahtuma::tapahtuma()->tyyppi() == RACE_ROGAINING;
+    const bool rogaining = Tapahtuma::Get()->tyyppi() == RACE_ROGAINING;
     int r = m_pisteet;
 
     if (!sakkoton && rogaining) {
