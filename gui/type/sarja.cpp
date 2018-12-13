@@ -66,7 +66,7 @@ SarjaP Sarja::haeSarja(const QVariant &id)
 {
     QSqlQuery query;
     query.prepare("SELECT nimi, sakko, yhteislahto, aikaraja FROM sarja WHERE tapahtuma = ? AND id = ?");
-    query.addBindValue(Tapahtuma::Get()->id());
+    query.addBindValue(Tapahtuma::Id());
     query.addBindValue(id);
 
     SarjaP s;
@@ -200,18 +200,16 @@ bool Sarja::moveRasti(int &newindex, int from, int to)
 
 SarjaP Sarja::dbInsert(void)
 {
-    const Tapahtuma *tapahtuma = Tapahtuma::Get();
-
     QSqlDatabase::database().transaction();
 
-    const bool rogaining = tapahtuma->tyyppi() == RACE_ROGAINING;
+    const bool rogaining = Tapahtuma::IsRogaining();
     const QString nimi = _("Uusi rata");
     const int sakko = rogaining ? 1 : -1;
     const QTime aikaraja = rogaining ? QTime(1, 0) : QTime();
 
     QSqlQuery query;
     query.prepare("INSERT INTO sarja (tapahtuma, nimi, sakko, aikaraja, sakkoyksikko) VALUES (?, ?, ?, ?, ?)");
-    query.addBindValue(tapahtuma->id());
+    query.addBindValue(Tapahtuma::Id());
     query.addBindValue(nimi);
     query.addBindValue(sakko);
     query.addBindValue(aikaraja);

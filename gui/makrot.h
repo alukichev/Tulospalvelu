@@ -39,7 +39,4 @@
                                 }})
 #endif
 
-#define RACE_CLASSIC    0
-#define RACE_ROGAINING  1
-
 #endif // MAKROT_H

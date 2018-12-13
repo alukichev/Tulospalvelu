@@ -32,10 +32,9 @@ QList<Valiaika> Valiaika::haeValiajat(const QVariant &tulosId)
 
 QList<Valiaika> Valiaika::haeRastiValiajat(SarjaP sarja, int jarj)
 {
-    const int tapahtuma = Tapahtuma::Get()->id();
     QList<Valiaika> valiajat;
 
-    if (tapahtuma == RACE_ROGAINING) // Pistesuunnistuksessa vapaa rastijärjestys kilpailijoille
+    if (Tapahtuma::IsRogaining()) // Pistesuunnistuksessa vapaa rastijärjestys kilpailijoille
         return valiajat;
 
     QSqlQuery query;
@@ -51,7 +50,7 @@ QList<Valiaika> Valiaika::haeRastiValiajat(SarjaP sarja, int jarj)
                 "ORDER BY v.aika ASC\n"
     );
 
-    query.addBindValue(tapahtuma);
+    query.addBindValue(Tapahtuma::Id());
     query.addBindValue(sarja->getId());
     query.addBindValue(jarj);
 

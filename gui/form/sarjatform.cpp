@@ -12,7 +12,7 @@ SarjatForm::SarjatForm(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    const bool rogaining = Tapahtuma::Get()->tyyppi() == RACE_ROGAINING;
+    const bool rogaining = Tapahtuma::IsRogaining();
 
     ui->sakkoLabel->setText(rogaining
                             ? _("Sakko annetaan pisteinä joka aikarajan yli menevän ajan alkavasta minuutista")

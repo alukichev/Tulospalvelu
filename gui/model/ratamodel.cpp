@@ -40,10 +40,10 @@ static int FindPList(const QList<QSharedPointer<T> >& list, const T *p)
     return -1;
 }
 
-static inline Rasti LuoRasti(bool *ok, SarjaP s, int tapahtumatyyppi)
+static inline Rasti LuoRasti(bool *ok, SarjaP s, bool rogaining)
 {
     int koodi = LaskeVapaaKoodi(s);
-    Rasti r(koodi, tapahtumatyyppi == RACE_ROGAINING ? koodi / 10 : 0);
+    Rasti r(koodi, rogaining ? koodi / 10 : 0);
     bool db = r.dbUpdate();
 
     if (ok)
@@ -96,7 +96,7 @@ QVariant RataModel::headerData(int section, Qt::Orientation orientation, int rol
     case 1:
         return _("Nimi");
     case 2:
-        return Tapahtuma::Tyyppi() == RACE_ROGAINING ? _("Sakkopisteet") : _("Sakkoaika");
+        return Tapahtuma::IsRogaining() ? _("Sakkopisteet") : _("Sakkoaika");
     case 3:
         return _("Lähtöaika");
     case 4:
@@ -266,7 +266,7 @@ bool RataModel::insertRow(int row, const QModelIndex &parent)
     else {
         SarjaP s = m_sarjat.at(parent.row());
 
-        s->insertRasti(row, LuoRasti(&ok, s, Tapahtuma::Tyyppi()));
+        s->insertRasti(row, LuoRasti(&ok, s, Tapahtuma::IsRogaining()));
         if (ok)
             s->dbUpdate();
     }

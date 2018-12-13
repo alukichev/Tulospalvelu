@@ -124,7 +124,7 @@ void MainWindow::setupTapahtuma()
 
     this->setWindowTitle(_("Tulospalvelu v%1 - %2 (%3)")
                          .arg(VERSION)
-                         .arg(Tapahtuma::Get()->nimi())
+                         .arg(Tapahtuma::Nimi())
                          .arg(Tapahtuma::TyyppiNimi()));
     m_serialStatus->setText("Lukulaite: Yhteys katkaistu");
     statusBar()->addPermanentWidget(m_serialStatus);
@@ -161,7 +161,7 @@ void MainWindow::connectDatabase()
 #endif
 
     query.prepare("SELECT COUNT(*) FROM tulos WHERE tapahtuma = ?");
-    query.addBindValue(Tapahtuma::Get()->id());
+    query.addBindValue(Tapahtuma::Id());
 
     // Mikäli kysely epäonnistuu ei tietokantaa ole ja se täytyy luoda
     SQL_EXEC(query, );
@@ -177,7 +177,7 @@ void MainWindow::setupDatabase()
 
     query.prepare("SELECT COUNT(*) FROM tulos WHERE tapahtuma = ? AND NOT poistettu");
 
-    query.addBindValue(Tapahtuma::Get()->id());
+    query.addBindValue(Tapahtuma::Id());
 
     SQL_EXEC(query, );
 
@@ -187,7 +187,7 @@ void MainWindow::setupDatabase()
 
     query.prepare("SELECT l.*, e.vuosi, e.kuukausi FROM luettu_emit AS l JOIN emit AS e ON e.id = l.emit WHERE l.tapahtuma = ? AND l.tulos IS NULL");
 
-    query.addBindValue(Tapahtuma::Get()->id());
+    query.addBindValue(Tapahtuma::Id());
 
     SQL_EXEC(query,);
 
@@ -575,15 +575,13 @@ void MainWindow::on_actionVie_tulokset_triggered()
 {
     QString fileName = QFileDialog::getSaveFileName(this, _("Tulospalvelu - Tallenna tulokset."), _("tulosdat.db"), _("*.db"));
 
-    if (fileName.isNull()) {
+    if (fileName.isNull())
         return;
-    }
 
     QFile file(fileName);
 
-    if (file.exists()) {
+    if (file.exists())
         file.remove();
-    }
 
     Tietokanta::vieTulokset(*Tapahtuma::Get(), fileName);
 }
@@ -603,7 +601,7 @@ void MainWindow::on_actionTuo_tulokset_triggered()
 
         query.prepare("SELECT COUNT(*) FROM tulos WHERE tapahtuma = ? AND NOT poistettu");
 
-        query.addBindValue(Tapahtuma::Get()->id());
+        query.addBindValue(Tapahtuma::Id());
 
         SQL_EXEC(query, );
 
@@ -743,7 +741,7 @@ void MainWindow::on_actionPaivitaValiajat_triggered()
     query.prepare("SELECT id FROM tulos WHERE sarja = ? AND tapahtuma = ?");
 
     query.addBindValue(d.getSarja()->getId());
-    query.addBindValue(Tapahtuma::Get()->id());
+    query.addBindValue(Tapahtuma::Id());
 
     SQL_EXEC(query,);
 

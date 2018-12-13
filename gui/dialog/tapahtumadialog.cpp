@@ -13,7 +13,7 @@ TapahtumaDialog::TapahtumaDialog(QWidget *parent) :
 
     ui->tapahtumaView->setModel(m_tapahtumaModel);
 
-    ui->cancelButton->setEnabled(Tapahtuma::Get()->id() != 0);
+    ui->cancelButton->setEnabled(Tapahtuma::Id() != 0);
 
     sqlTapahtuma();
 }

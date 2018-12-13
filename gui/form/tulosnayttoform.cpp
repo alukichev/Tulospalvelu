@@ -51,7 +51,7 @@ void TulosnayttoForm::sqlTulos()
                 "LIMIT %1\n"
     ).arg(m_settings.value("TulosnayttoForm/tulosLimit", 3).toInt()));
 
-    query.addBindValue(Tapahtuma::Get()->id());
+    query.addBindValue(Tapahtuma::Id());
 
     SQL_EXEC(query,);
 

@@ -85,7 +85,7 @@ void SelausForm::sqlTulos()
 
     query.prepare("SELECT id FROM tulos WHERE tapahtuma = ?");
 
-    query.addBindValue(Tapahtuma::Get()->id());
+    query.addBindValue(Tapahtuma::Id());
 
     SQL_EXEC(query,);
 

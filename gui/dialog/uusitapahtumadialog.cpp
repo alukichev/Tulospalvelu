@@ -4,6 +4,7 @@
 
 #include <makrot.h>
 
+#include "type/tapahtuma.h"
 #include "uusitapahtumadialog.h"
 #include "ui_uusitapahtumadialog.h"
 
@@ -13,11 +14,7 @@ UusiTapahtumaDialog::UusiTapahtumaDialog(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    QStringList types{
-            _("suunnistus"),        // RACE_CLASSIC
-            _("pistesuunnistus")    // RACE_ROGAINING
-    };
-    QStringListModel *model = new QStringListModel(types, this);
+    QStringListModel *model = new QStringListModel(Tapahtuma::Tyypit(), this);
     ui->tyyppiCombo->setModel(model);
 }
 
@@ -31,9 +28,9 @@ QString UusiTapahtumaDialog::nimi(void) const
     return ui->nimiEdit->text();
 }
 
-int UusiTapahtumaDialog::tyyppi(void) const
+Tapahtuma::Type UusiTapahtumaDialog::tyyppi(void) const
 {
     const int index = ui->tyyppiCombo->currentIndex();
 
-    return index < 0 ? RACE_CLASSIC : index;
+    return index < 0 ? Tapahtuma::RACE_CLASSIC : static_cast<Tapahtuma::Type>(index);
 }

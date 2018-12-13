@@ -1,20 +1,15 @@
 #include "tulos.h"
 
 // Palauttaa true, jos verta on parempi tai yhtä hyvä kuin aika ja/tai pisteet
-static inline bool sijoita(const Tulos& verta, const QTime& aika, int pisteet)
+static inline bool sijoita(const Tulos& verta, const QTime& aika, int pisteet, bool rogaining)
 {
     if (verta.m_tila != Tulos::Hyvaksytty)
         return false;
 
-    switch (Tapahtuma::Get()->tyyppi()) {
-    case RACE_ROGAINING:
+    if (rogaining)
         return pisteet < verta.m_pisteet || (pisteet == verta.m_pisteet && verta.m_aika < aika);
-    case RACE_CLASSIC:
-    default:
-        break;
-    }
-
-    return verta.m_aika < aika;
+    else
+        return verta.m_aika < aika;
 }
 
 Tulos::Tulos(int id, const QString &sarja, int sija, const QString &_emit,
@@ -37,9 +32,8 @@ Tulos::Tulos(int id, const QString &sarja, int sija, const QString &_emit,
 
 QList<Tulos> Tulos::haeTulokset(SarjaP sarja)
 {
-    QString sort = Tapahtuma::Get()->tyyppi() == RACE_ROGAINING
-            ? "t.pisteet DESC, t.aika ASC\n"
-            : "t.aika ASC\n";
+    const bool rogaining = Tapahtuma::IsRogaining();
+    QString sort = rogaining ? "t.pisteet DESC, t.aika ASC\n" : "t.aika ASC\n";
 
     QSqlQuery query;
     query.prepare(_("SELECT t.id, t.emit, k.nimi AS kilpailija,\n"
@@ -49,7 +43,7 @@ QList<Tulos> Tulos::haeTulokset(SarjaP sarja)
                 "  JOIN kilpailija AS k ON k.id = t.kilpailija\n"
                 "WHERE t.tapahtuma = ? AND t.sarja = ? AND NOT t.poistettu\n"
                 "ORDER BY hyvaksytty DESC,\n") + sort);
-    query.addBindValue(Tapahtuma::Get()->id());
+    query.addBindValue(Tapahtuma::Id());
     query.addBindValue(sarja->getId());
 
     QList<Tulos> tulokset;
@@ -62,7 +56,7 @@ QList<Tulos> Tulos::haeTulokset(SarjaP sarja)
         const QTime aika = r.value("aika").toTime();
         const int pisteet = r.value("pisteet").toInt();
 
-        if (tila == Tulos::Hyvaksytty && !tulokset.isEmpty() && sijoita(tulokset.constLast(), aika, pisteet))
+        if (tila == Tulos::Hyvaksytty && !tulokset.isEmpty() && sijoita(tulokset.constLast(), aika, pisteet, rogaining))
             ++sija;
 
         tulokset << Tulos(r.value("id").toInt(), sarja->getNimi(), sija,

@@ -4,6 +4,8 @@
 #include <QDialog>
 #include <QString>
 
+#include "type/tapahtuma.h"
+
 namespace Ui {
 class UusiTapahtumaDialog;
 }
@@ -19,7 +21,7 @@ public:
     ~UusiTapahtumaDialog();
 
     QString nimi(void) const;
-    int tyyppi(void) const;
+    Tapahtuma::Type tyyppi(void) const;
 
 private:
     Ui::UusiTapahtumaDialog *ui;

@@ -210,7 +210,7 @@ void EmitDataModel::setSarja(SarjaP sarja)
 
     int rasti_i = 0;
     int virheita = 0;
-    const bool rogaining = Tapahtuma::Get()->tyyppi() == RACE_ROGAINING;
+    const bool rogaining = Tapahtuma::IsRogaining();
 
     foreach (const EmitLeima& d, m_leimat) {
         if (d.m_koodi == 0) {
