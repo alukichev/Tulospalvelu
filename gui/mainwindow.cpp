@@ -125,7 +125,7 @@ void MainWindow::setupTapahtuma()
     this->setWindowTitle(_("Tulospalvelu v%1 - %2 (%3)")
                          .arg(VERSION)
                          .arg(Tapahtuma::Get()->nimi())
-                         .arg(Tapahtuma::Get()->tyyppi()));
+                         .arg(Tapahtuma::TyyppiNimi()));
     m_serialStatus->setText("Lukulaite: Yhteys katkaistu");
     statusBar()->addPermanentWidget(m_serialStatus);
     statusBar()->addPermanentWidget(m_tuloksiaLabel);

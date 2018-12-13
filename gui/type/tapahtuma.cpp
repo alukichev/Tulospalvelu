@@ -2,6 +2,8 @@
 
 #include "tapahtuma.h"
 
+#define ARRAY_SIZE(a)   ((int)(sizeof(a) / sizeof(a[0])))
+
 class Tapahtuma::P : public QSharedPointer<Tapahtuma>
 {
 public:
@@ -15,6 +17,12 @@ public:
 
 private:
     typedef QSharedPointer<Tapahtuma> B;
+};
+
+static const QString _tyypit[] = {
+    _("suunnistus"),        // RACE_CLASSIC
+    _("pistesuunnistus"),   // RACE_ROGAINING
+    _("tuntematon laji")
 };
 
 static inline int raceType(int v)
@@ -44,6 +52,12 @@ QString Tapahtuma::nimi() const
 int Tapahtuma::tyyppi(void) const
 {
     return m_tyyppi;
+}
+
+QString Tapahtuma::tyyppiNimi(void) const
+{
+    const int i = m_tyyppi < ARRAY_SIZE(_tyypit) ? m_tyyppi : ARRAY_SIZE(_tyypit) - 1;
+    return _tyypit[i];
 }
 
 void Tapahtuma::Luo(const QString &nimi, int tyyppi)

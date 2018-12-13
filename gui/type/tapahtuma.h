@@ -12,12 +12,13 @@ public:
     int id() const;
     QString nimi() const;
     int tyyppi(void) const;
-
+    QString tyyppiNimi(void) const;
 
     static bool Valitse(int id);
     static const Tapahtuma* Get(void);
     static inline int Id(void) { return Get()->id(); }
     static inline int Tyyppi(void) { return Get()->tyyppi(); }
+    static inline QString TyyppiNimi(void) { return Get()->tyyppiNimi(); }
 
     static void Luo(const QString& nimi, int tyyppi = RACE_CLASSIC);
 
